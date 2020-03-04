@@ -1,8 +1,83 @@
 ﻿@{
-    ViewData["Title"] = "Home Page";
+    ViewData["Title"] = "Chat";
 }
 
+    @*<header>
+        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
+            <div class="container">
+                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">LiveChat</a>
+                <button class="navbar-toggler" type="button" data-toggle="collapse" data-target=".navbar-collapse" aria-controls="navbarSupportedContent"
+                        aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="navbar-collapse collapse d-sm-inline-flex flex-sm-row-reverse">
+                    <ul class="navbar-nav flex-grow-1">
+                        <li class="nav-item">
+                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Chat">Privacy</a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+    </header>*@
+
+<header>
+    <nav class="navbar navbar-light bg-light">
+        <span class="navbar-brand mb-0 h1">LiveChat</span>
+    </nav>
+</header>
 <div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://docs.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+    <h1 class="display-4">Welcome to Our Chat</h1>
+</div>
+<div class="container">
+    <form asp-controller="Home" asp-action="Chat" method="post">
+        <div class="input-group">
+            <div class="input-group-prepend">
+                <span class="input-group-text" id="basic-addon1">Name:</span>
+            </div>
+            <input type="text" class="form-control" placeholder="Full Name" id="name" name="name" aria-label="Name" aria-describedby="basic-addon1" value="Jon Stewart">
+        </div>
+        <div class="input-group">
+            <div class="input-group-prepend">
+                <span class="input-group-text" id="basic-addon1">Account Number:</span>
+            </div>
+            <input type="text" class="form-control" placeholder="5Dxxxxx" id="customerid" name="customerid" aria-label="Account" aria-describedby="basic-addon1" value="5D123456789">
+        </div>
+        <div class="input-group">
+            <div class="input-group-prepend">
+                <span class="input-group-text" id="basic-addon1">Choose a department:</span>
+            </div>
+            <select class="form-control" id="queuename" name="queuename">
+                <option value="WebChat_Demo">WebChat_Demo</option>
+                <option value="customer">customer</option>
+                <option value="Bonus - Chat">Bonus - Chat</option>
+                <option value="Deposit - Chat">Deposit - Chat</option>
+                <option value="Fraud - Chat">Fraud - Chat</option>
+                <option value="Payouts - Chat">Payouts - Chat</option>
+                <option value="Vietbet - Chat">Vietbet - Chat</option>
+                <option value="Wagering Issues - Chat">Wagering Issues - Chat</option>
+                <option value="ChineseBookie - Chat">ChineseBookie - Chat</option>
+                <option value="New Accounts - Chat">New Accounts - Chat</option>
+                <option value="BetAnySports - Chat">BetAnySports - Chat</option>
+                <option value="Customer Service - Chat">Customer Service - Chat</option>
+                <option value="BetAnySports Sales - Chat">BetAnySports Sales - Chat</option>
+                <option value="Casino & Poker Support - Chat">Casino & Poker Support - Chat</option>
+            </select>
+        </div>
+        <br />
+        <div class="form-row">
+            <div class="form-group-sm col-md-offset-2 col-md-10">
+                <input type="submit" class="btn-primary btn-xs btn" value="Chat with Us  &raquo;" />
+                @*<button type="submit" class="btn btn-primary btn-xs">Chat with Us  &raquo;</button>*@
+                <input name="__RequestVerificationToken" type="hidden" value="[Some token]" />
+            </div>
+        </div>
+
+    </form>
 </div>

@@ -1,0 +1,15 @@
+﻿@model LiveChat.Models.Client
+@{
+    ViewData["Title"] = "Chat";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+    <header>
+        <nav class="navbar navbar-light bg-light justify-content-end">
+            <a class="nav-link" asp-controller="Home" asp-action="LogOut"><i class="glyphicon glyphicon-log-out"></i>Log Out</a>
+        </nav>
+    </header>
+
+    <div class="container">
+        DisplayFor -> @Html.DisplayFor(model => model.firstname) @Html.DisplayFor(model => model.lastname) en la cola @Html.DisplayFor(model => model.queuename)
+    </div>
