@@ -31,9 +31,10 @@ namespace LiveChat.Controllers
         //    _logger = logger;
         //}
 
-        public HomeController(IConfiguration purecloudconfiguration)
+        public HomeController(IConfiguration purecloudconfiguration, ILogger<HomeController> logger)
         {
             _purecloudconfiguration = purecloudconfiguration;
+            _logger = logger;
         }
 
         public IActionResult Index()
@@ -52,28 +53,10 @@ namespace LiveChat.Controllers
             };
             //ViewData["name"] = @"Request.Form['name']" + " " + Request.Form["name"];
 
-            XmlDocument integrationxml = new XmlDocument();
-            XmlDocument organizationxml = new XmlDocument();
-            integrationxml.Load(@"~/content/integration.xml");
-            organizationxml.Load(@"~/content/organization.xml");
-
-            XmlNodeList integrationnodes = integrationxml.SelectNodes("integrations");
-            XmlNodeList organizationnodes = organizationxml.SelectNodes("organization");
-
-            purecloudconfiguration = new Purecloudconfiguration()
-            {
-                client_id = integrationnodes.Item(0).ChildNodes.Item(0).Attributes.GetNamedItem("client_id").Value,
-                client_secret = integrationnodes.Item(0).ChildNodes.Item(0).Attributes.GetNamedItem("client_secret").Value,
-                grant_type = integrationnodes.Item(0).ChildNodes.Item(4).Attributes.GetNamedItem("grant_type").Value,
-                content_type = integrationnodes.Item(0).ChildNodes.Item(4).Attributes.GetNamedItem("content_type").Value,
-                url_host = integrationnodes.Item(0).ChildNodes.Item(1).Attributes.GetNamedItem("host").Value,
-                url_login = integrationnodes.Item(0).ChildNodes.Item(1).Attributes.GetNamedItem("login").Value,
-                url_api = integrationnodes.Item(0).ChildNodes.Item(1).Attributes.GetNamedItem("api").Value,
-                uri_token = integrationnodes.Item(0).ChildNodes.Item(2).Attributes.GetNamedItem("uritoken").Value,
-                deploymentid = integrationnodes.Item(0).ChildNodes.Item(3).Attributes.GetNamedItem("id").Value,
-                organizationid = organizationnodes.Item(0).ChildNodes.Item(0).Attributes.GetNamedItem("organizationid").Value,
-                region = organizationnodes.Item(0).ChildNodes.Item(0).Attributes.GetNamedItem("region").Value
+            purecloudconfiguration = new Purecloudconfiguration() {
+                integrations = new integrations()
             };
+            _purecloudconfiguration.GetSection("integrations").Bind(purecloudconfiguration.integrations);         
 
             PureCloudRegionHosts region = PureCloudRegionHosts.us_east_1;
             configuration.ApiClient.setBasePath(region);
@@ -92,19 +75,19 @@ namespace LiveChat.Controllers
             webChatApi = new WebChatApi();
             CreateWebChatConversationRequest chatbody = new CreateWebChatConversationRequest()
             {
-                DeploymentId = purecloudconfiguration.deploymentid,
-                OrganizationId = purecloudconfiguration.organizationid,
+                DeploymentId = purecloudconfiguration.integrations.deployment.id,
+                OrganizationId = purecloudconfiguration.integrations.organization.id,
                 RoutingTarget = new WebChatRoutingTarget()
                 {
-                    Language = "en",
+                    Language = purecloudconfiguration.integrations.others.language,
                     TargetType = WebChatRoutingTarget.TargetTypeEnum.Queue,
-                    TargetAddress = Request.Form["queuename"],
-                    Skills = new List<string>(),
+                    TargetAddress = client.queuename,
+                    Skills = new List<string>() { client.queuename },
                     Priority = '5'
                 },
                 MemberInfo = new GuestMemberInfo()
                 {
-                    DisplayName = Request.Form["name"],
+                    DisplayName = client.firstname + "  " + client.lastname,
                     CustomFields = new Dictionary<string, string>() {
                         { "customField1Label", client.customfield1 },
                         { "customField2Label", client.customfield2 },

@@ -1,17 +1,21 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
 <integrations>
   <credentials
-    client_id="01be0beb-94c1-452e-b94e-cd4112aef6ed"
-    client_secret="oiLjsKdGjIHHCj4mjwITOG5HwkH-kuUmJZhTv0ZqHdI" />
+        client_id="01be0beb-94c1-452e-b94e-cd4112aef6ed"
+        client_secret="oiLjsKdGjIHHCj4mjwITOG5HwkH-kuUmJZhTv0ZqHdI" />
   <environment
-    host="mypurecloud.com"
-    login="https://login."
-    api="https://api." />
+        host="mypurecloud.com"
+        login="https://login."
+        api="https://api." />
   <integrationsUri
-    uritoken="/oauth/token" />
+        uritoken="/oauth/token" />
   <deployment
-    id="656ec2ff-bdda-4ec4-b1a1-4124fdfa7621" />
+        id="656ec2ff-bdda-4ec4-b1a1-4124fdfa7621" />
   <others
-    grant_type="client_credentials"
-    content_type="application/json" />
+        grant_type="client_credentials"
+        content_type="application/json" />
+  <organization
+        organizationid="c16b57cb-91d2-44e3-ad81-12c95bdef02d"
+        region="us_east_1"
+        />
 </integrations>

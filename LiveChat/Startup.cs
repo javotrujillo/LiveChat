@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.HttpsPolicy;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using LiveChat.Models;
 
 namespace LiveChat
 {
@@ -23,7 +24,9 @@ namespace LiveChat
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+            Purecloudconfiguration purecloudconfiguration = new Purecloudconfiguration();
             services.AddControllersWithViews();
+            services.Configure<Purecloudconfiguration>(Configuration.GetSection("integrations"));
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

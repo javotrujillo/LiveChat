@@ -29,8 +29,8 @@ namespace LiveChat
                  .ConfigureAppConfiguration((hostingContext, config) =>
                  {
 
-                     config.AddXmlFile(
-                     "integration.xml", optional: false, reloadOnChange: false);
+                     config.AddJsonFile(
+                     "integration.json", optional: false, reloadOnChange: false);
 
                  })
                 .ConfigureWebHostDefaults(webBuilder =>
