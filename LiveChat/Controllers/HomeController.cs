@@ -21,20 +21,20 @@ namespace LiveChat.Controllers
         private Configuration configuration { get; set; }
         private ApiClient apiclient { get; set; }
         private WebChatApi webChatApi { get; set; }
-        private Purecloudconfiguration purecloudconfiguration { get; set; }
+        private Purecloudconfiguration pcconfiguration { get; set; }
 
         private IConfiguration _purecloudconfiguration;
-
-
-        //public HomeController(ILogger<HomeController> logger)
-        //{
-        //    _logger = logger;
-        //}
 
         public HomeController(IConfiguration purecloudconfiguration, ILogger<HomeController> logger)
         {
             _purecloudconfiguration = purecloudconfiguration;
             _logger = logger;
+
+            //WebChat objects
+            configuration = new Configuration();
+            pcconfiguration = new Purecloudconfiguration() { integrations = new integrations() };
+            webChatApi = new WebChatApi();
+            apiclient = new ApiClient();
         }
 
         public IActionResult Index()
@@ -51,35 +51,27 @@ namespace LiveChat.Controllers
                 customerid = Request.Form["customerid"],
                 queuename = Request.Form["queuename"]
             };
-            //ViewData["name"] = @"Request.Form['name']" + " " + Request.Form["name"];
-
-            purecloudconfiguration = new Purecloudconfiguration() {
-                integrations = new integrations()
-            };
-            _purecloudconfiguration.GetSection("integrations").Bind(purecloudconfiguration.integrations);         
-
+            _purecloudconfiguration.GetSection("integrations").Bind(pcconfiguration.integrations);         
             PureCloudRegionHosts region = PureCloudRegionHosts.us_east_1;
             configuration.ApiClient.setBasePath(region);
+
             //Configuration.Default.ApiClient.setBasePath(region);
-
             //var accessTokenInfo = configuration.ApiClient.PostToken(
-            //    purecloudconfiguration.client_id,
-            //    purecloudconfiguration.client_secret);
+            //    pcconfiguration.integrations.credentials.client_id,
+            //    pcconfiguration.integrations.credentials.client_secret);
             ////var accessTokenInfo = Configuration.Default.ApiClient.PostToken(
-            ////    purecloudconfiguration.client_id,
-            ////    purecloudconfiguration.client_secret);
-
+            ////    pcconfiguration.integrations.credentials.client_id,
+            ////    pcconfiguration.integrations.credentials.client_secret);
             //configuration.AccessToken = accessTokenInfo.AccessToken;
             ////Configuration.Default.AccessToken = accessTokenInfo.AccessToken;
 
-            webChatApi = new WebChatApi();
             CreateWebChatConversationRequest chatbody = new CreateWebChatConversationRequest()
             {
-                DeploymentId = purecloudconfiguration.integrations.deployment.id,
-                OrganizationId = purecloudconfiguration.integrations.organization.id,
+                DeploymentId = pcconfiguration.integrations.deployment.id,
+                OrganizationId = pcconfiguration.integrations.organization.id,
                 RoutingTarget = new WebChatRoutingTarget()
                 {
-                    Language = purecloudconfiguration.integrations.others.language,
+                    Language = pcconfiguration.integrations.others.language,
                     TargetType = WebChatRoutingTarget.TargetTypeEnum.Queue,
                     TargetAddress = client.queuename,
                     Skills = new List<string>() { client.queuename },
@@ -87,7 +79,7 @@ namespace LiveChat.Controllers
                 },
                 MemberInfo = new GuestMemberInfo()
                 {
-                    DisplayName = client.firstname + "  " + client.lastname,
+                    DisplayName = client.firstname + " " + client.lastname,
                     CustomFields = new Dictionary<string, string>() {
                         { "customField1Label", client.customfield1 },
                         { "customField2Label", client.customfield2 },
@@ -95,7 +87,6 @@ namespace LiveChat.Controllers
                     }
                 }
             };
-
             CreateWebChatConversationResponse chatInfo = webChatApi.PostWebchatGuestConversations(chatbody);
 
             return View(client);
