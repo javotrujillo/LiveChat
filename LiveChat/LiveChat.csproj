@@ -13,8 +13,20 @@
 
   <ItemGroup>
     <Folder Include="wwwroot\content\" />
+    <Folder Include="Views\Chat\" />
   </ItemGroup>
 
 
 
+  <ItemGroup>
+    <Content Remove="integration.json" />
+    <Content Remove="wwwroot\css\app.css" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="integration.json" Condition="'$(ExcludeConfigFilesFromBuildOutput)'=='true'">
+      <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </EmbeddedResource>
+  </ItemGroup>
 </Project>

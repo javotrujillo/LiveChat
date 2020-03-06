@@ -45,6 +45,13 @@ namespace LiveChat
             app.UseHttpsRedirection();
             app.UseStaticFiles();
 
+            var webSocketOptions = new WebSocketOptions()
+            {
+                KeepAliveInterval = TimeSpan.FromSeconds(120),
+                ReceiveBufferSize = 4 * 1024
+            };
+            app.UseWebSockets(webSocketOptions);
+
             app.UseRouting();
 
             app.UseAuthorization();
@@ -52,8 +59,12 @@ namespace LiveChat
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapControllerRoute(
-                    name: "default",
+                    name: "home",
                     pattern: "{controller=Home}/{action=Index}/{id?}");
+
+                endpoints.MapControllerRoute(
+                    name: "chat",
+                    pattern: "{controller=Chat}/{action=Index}/{id?}");
             });
         }
     }
