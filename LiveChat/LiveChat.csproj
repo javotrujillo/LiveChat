@@ -3,7 +3,7 @@
   <PropertyGroup>
     <TargetFramework>netcoreapp3.1</TargetFramework>
     <StartupObject>LiveChat.Program</StartupObject>
-    <ApplicationIcon>wwwroot\favicon.ico</ApplicationIcon>
+    <ApplicationIcon>wwwroot\chaticon.ico</ApplicationIcon>
   </PropertyGroup>
 
   <ItemGroup>
@@ -13,14 +13,6 @@
 
   <ItemGroup>
     <Folder Include="wwwroot\content\" />
-    <Folder Include="Views\Chat\" />
-  </ItemGroup>
-
-
-
-  <ItemGroup>
-    <Content Remove="integration.json" />
-    <Content Remove="wwwroot\css\app.css" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="integration.json" Condition="'$(ExcludeConfigFilesFromBuildOutput)'=='true'">
@@ -28,5 +20,10 @@
       <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </EmbeddedResource>
+  </ItemGroup>
+  <ItemGroup>
+    <Content Update="wwwroot\chaticon.ico">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
 </Project>

@@ -2,30 +2,9 @@
     ViewData["Title"] = "Chat";
 }
 
-    @*<header>
-        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
-            <div class="container">
-                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">LiveChat</a>
-                <button class="navbar-toggler" type="button" data-toggle="collapse" data-target=".navbar-collapse" aria-controls="navbarSupportedContent"
-                        aria-expanded="false" aria-label="Toggle navigation">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
-                <div class="navbar-collapse collapse d-sm-inline-flex flex-sm-row-reverse">
-                    <ul class="navbar-nav flex-grow-1">
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Chat">Privacy</a>
-                        </li>
-                    </ul>
-                </div>
-            </div>
-        </nav>
-    </header>*@
+@section scripts {
+
+}
 
 <header>
     <nav class="navbar navbar-light bg-light">
@@ -54,7 +33,7 @@
                 <span class="input-group-text" id="basic-addon1">Choose a department:</span>
             </div>
             <select class="form-control" id="queuename" name="queuename">
-                <option value="WebChat_Demo" >WebChat_Demo</option>
+                <option value="WebChat_Demo">WebChat_Demo</option>
                 <option value="customer">customer</option>
                 <option value="Bonus - Chat">Bonus - Chat</option>
                 <option value="Deposit - Chat">Deposit - Chat</option>
@@ -78,6 +57,5 @@
                 <input name="__RequestVerificationToken" type="hidden" value="[Some token]" />
             </div>
         </div>
-
     </form>
 </div>
