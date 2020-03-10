@@ -18,7 +18,8 @@
     "others": {
       "grant_type": "client_credentials",
       "content_type": "application/json",
-      "language": "en"
+      "language": "en",
+      "table": "a1f63f44-e0b4-4b91-abad-5314a4db3386"
     },
     "organization": {
       "id": "c16b57cb-91d2-44e3-ad81-12c95bdef02d",
