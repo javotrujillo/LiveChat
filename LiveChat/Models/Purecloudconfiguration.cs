@@ -52,7 +52,6 @@ namespace LiveChat.Models
         public string grant_type { get; set; }
         public string content_type { get; set; }
         public string language { get; set; }
-        public string table { get; set; }
     }
 
     public partial class uri

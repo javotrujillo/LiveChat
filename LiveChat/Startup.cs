@@ -65,7 +65,7 @@ namespace LiveChat
                 endpoints.MapControllerRoute(
                     name: "chat",
                     //pattern: "{controller=Chat}/{action=Index}/{id?}");
-                    pattern: "{controller=Chat}/{action=Index}");
+                    pattern: "{controller=Chat}/{action?}");
             });
 
 

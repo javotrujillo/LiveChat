@@ -1,247 +1,26 @@
 ﻿@model LiveChat.Models.Client
+
 @{
     ViewData["Title"] = "Chat";
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
-@* <link rel="stylesheet" href="@Url.Content("~/css/app.css")">*@
-
-@section scripts {
-
-    <style>
-        *, *:before, *:after {
-            -moz-box-sizing: border-box;
-            -webkit-box-sizing: border-box;
-            box-sizing: border-box;
-        }
-
-        html {
-            font-family: Helvetica, Arial, sans-serif;
-            font-size: 100%;
-            background: #333;
-        }
-
-        #page-wrapper {
-            width: 650px;
-            background: #FFF;
-            padding: 1em;
-            margin: 1em auto;
-            border-top: 5px solid #69c773;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.8);
-        }
-
-        h1 {
-            margin-top: 0;
-        }
-
-        #status {
-            font-size: 0.9rem;
-            margin-bottom: 1rem;
-        }
-
-        .open {
-            color: green;
-        }
-
-        .closed {
-            color: red;
-        }
-
-
-        ul {
-            list-style: none;
-            margin: 0;
-            padding: 0;
-            font-size: 0.95rem;
-        }
-
-            ul li {
-                padding: 0.5rem 0.75rem;
-                border-bottom: 1px solid #EEE;
-            }
-
-                ul li:first-child {
-                    border-top: 1px solid #EEE;
-                }
-
-                ul li span {
-                    display: inline-block;
-                    width: 90px;
-                    font-weight: bold;
-                    color: #999;
-                    font-size: 0.7rem;
-                    text-transform: uppercase;
-                    letter-spacing: 1px;
-                }
-
-        .sent {
-            background-color: #52cef8;
-        }
-
-        .received {
-        }
-
-        #message-form {
-            margin-top: 1.5rem;
-        }
-
-        textarea {
-            width: 100%;
-            padding: 0.5rem;
-            font-size: 1rem;
-            border: 1px solid #D9D9D9;
-            border-radius: 3px;
-            box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.1);
-            min-height: 100px;
-            margin-bottom: 1rem;
-        }
-
-        button {
-            display: inline-block;
-            border-radius: 3px;
-            border: none;
-            font-size: 0.9rem;
-            padding: 0.6rem 1em;
-            color: white;
-            margin: 0 0.25rem;
-            text-align: center;
-            background: #BABABA;
-            border-bottom: 1px solid #999;
-        }
-
-            button[type="submit"] {
-                background: #86b32d;
-                border-bottom: 1px solid #5d7d1f;
-            }
-
-            button:hover {
-                opacity: 0.75;
-                cursor: pointer;
-            }
-    </style>
-
-    <script type="text/javascript">
-        window.onload = function () {
-            // Get references to elements on the page.
-            var form = document.getElementById('message-form');
-            var messageField = document.getElementById('message');
-            var messagesList = document.getElementById('messages');
-            var socketStatus = document.getElementById('status');
-            var closeBtn = document.getElementById('close');
-
-
-            // Create a new WebSocket.
-            var socket = new WebSocket('@ViewBag.chatinformation.EventStreamUri');
-
-
-          // Handle any errors that occur.
-            socket.onerror = function (error) {
-                console.log('WebSocket Error: ' + error);
-            };
-
-
-          // Show a connected message when the WebSocket is opened.
-            socket.onopen = function(event) {
-                @*socketStatus.innerHTML = 'Connected to: >' + event.currentTarget.URL + '<' + @ViewBag.client.queuename;*@
-                socketStatus.innerHTML = 'Connected to: > ' + '@ViewBag.client.queuename';
-                socketStatus.className = 'open';
-            };
-
-
-          // Handle messages sent by the server.
-          socket.onmessage = function(event) {
-            var message = event.data;
-            messagesList.innerHTML += '<li class="received"><span>Received:</span>' +
-                                       message + '</li>';
-          };
-
-
-          // Show a disconnected message when the WebSocket is closed.
-          socket.onclose = function(event) {
-            socketStatus.innerHTML = 'Disconnected from @ViewBag.client.queuename.';
-            socketStatus.className = 'closed';
-          };
-
-
-          // Send a message when the form is submitted.
-          form.onsubmit = function(e) {
-            e.preventDefault();
-
-            // Retrieve the message from the textarea.
-            var message = messageField.value;
-
-            // Send the message through the WebSocket.
-              socket.send(message);
-
-            // Add the message to the messages list.
-            messagesList.innerHTML += '<li class="sent"><span>Sent:</span>' + message +
-                                      '</li>';
-
-            // Clear out the message field.
-            messageField.value = '';
-
-            return false;
-          };
-
-
-          // Close the WebSocket connection when the close button is clicked.
-          closeBtn.onclick = function(e) {
-            e.preventDefault();
-
-            // Close the WebSocket.
-            socket.close();
-
-            return false;
-          };
-
-        };
-
-
-
-    </script>
-
-    <script src="https://sdk-cdn.mypurecloud.com/javascript-guest/5.2.0/purecloud-guest-chat-client.min.js"></script>
-    <script type="text/javascript">
-        function SendMessage() {
-            $.ajax({
-                url: '/Chat/SendMessage',
-                type: 'get',
-                data: { messagetosend: 'Test', chatInfoId: '@ViewBag.chatinformation.Id', MemberId: '@ViewBag.chatinformation.Member.Id', token: '@ViewBag.token' },
-                datatype: 'json'
-            }).done(function (respuesta) {
-                alert("Ok");
-            })
-        }
-
-    </script>
-
-    <script type="text/javascript">
-        function ConsultaChat2() {
-            alert("test");
-        }
-    </script>
-}
 
 <header>
     <nav class="navbar navbar-light bg-light justify-content-end">
-        <a class="nav-link" asp-controller="Chat" asp-action="LogOut"><i class="glyphicon glyphicon-log-out"></i>Log Out</a>
+        <a class="nav-link" asp-controller="Chat" asp-action="LogOut" ><i class="glyphicon glyphicon-log-out"></i>Log Out</a>
     </nav>
-    /header>
+</header>
 
-    <div class="container">
-        DisplayFor -> @Html.DisplayFor(model => model.firstname) @Html.DisplayFor(model => model.lastname) en la cola @Html.DisplayFor(model => model.queuename)
-    </div>
+<div class="container">
+    DisplayFor -> @Html.DisplayFor(model => model.firstname) @Html.DisplayFor(model => model.lastname) en la cola @Html.DisplayFor(model => model.queuename)
+</div>
 
 
-    <!-- / Navigation Bar -->
-    <!-- Chat Body -->
-    <div class="container-fluid" id="page-wrapper">
-        <h1>Live Chat - 5Dimes</h1>
-        <div id="status">Connecting...</div>
-        <ul id="messages"></ul>
-        <form id="message-form" action="#" method="post">
-            <textarea id="message" placeholder="Write your message here..." required></textarea>
-            <button type="submit">Send Message</button>
-            <button type="button" id="close">Close Connection</button>
-        </form>
-    </div>
-    @*<script src="app.js"></script>*@
+<!-- / Navigation Bar -->
+
+<div class="container">
+    <h1>Stream to me</h1>
+    <ul id="StreamToMe"></ul>
+
+    <script src="~/js/stream.js"></script>
+</div>

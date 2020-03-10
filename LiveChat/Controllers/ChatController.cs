@@ -10,34 +10,45 @@ using PureCloudPlatform.Client.V2.Client;
 using PureCloudPlatform.Client.V2.Api;
 using PureCloudPlatform.Client.V2.Model;
 using Microsoft.Extensions.Configuration;
-//using System.Net.WebSockets;
+using System.Net.WebSockets;
 using Newtonsoft.Json;
 using PureCloudPlatform.Client.V2.Extensions;
-using Newtonsoft.Json.Linq;
-using System.Net.Http;
-using System.Net.Http.Headers;
-using System.Text;
 
 namespace LiveChat.Controllers
 {
     public class ChatController : Controller
     {
         private readonly ILogger<HomeController> _logger;
-        private IConfiguration _purecloudconfiguration;
-
         public Client client { get; set; }
-        public PureCloudPlatform.Client.V2.Client.Configuration configuration { get; set; }
-        public ApiClient apiclient { get; set; }
-        public WebChatApi webChatApi { get; set; }
-        public Purecloudconfiguration pcconfiguration { get; set; }
-        public CreateWebChatConversationResponse chatInfo { get; set; }
-        public AuthTokenInfo accessTokenInfo { get; set; }
+        private PureCloudPlatform.Client.V2.Client.Configuration configuration { get; set; }
+        private ApiClient apiclient { get; set; }
+        private WebChatApi webChatApi { get; set; }
+        private Purecloudconfiguration pcconfiguration { get; set; }
+        private CreateWebChatConversationResponse chatInfo { get; set; }
+        private TokenResponse accessTokenInfo { get; set; }
+        private IConfiguration _purecloudconfiguration;
+        private ClientWebSocket clientWebSocket { get; set; }
+        private System.Threading.CancellationToken CancellationToken { get; set; }
 
-        PureCloudRegionHosts region = PureCloudRegionHosts.us_east_1;
+
+        public ChatController(IConfiguration purecloudconfiguration, ILogger<HomeController> logger)
+        {
+            _purecloudconfiguration = purecloudconfiguration;
+            _logger = logger;
+
+            //WebChat objects
+            configuration = new PureCloudPlatform.Client.V2.Client.Configuration();
+            pcconfiguration = new Purecloudconfiguration() { integrations = new integrations() };
+            webChatApi = new WebChatApi();
+            apiclient = new ApiClient();
+            chatInfo = new CreateWebChatConversationResponse();
+            clientWebSocket = new ClientWebSocket();
+            accessTokenInfo = new TokenResponse();
+        }
 
         [HttpPost]
         [Route("Chat/Index")]
-        public async Task<IActionResult> IndexAsync([FromServices] IConfiguration purecloudconfiguration)
+        public async Task<IActionResult> IndexAsync()
         {
             var fullname = Request.Form["name"].ToString().Split(' ');
             client = new Client()
@@ -47,28 +58,16 @@ namespace LiveChat.Controllers
                 customerid = Request.Form["customerid"],
                 queuename = Request.Form["queuename"]
             };
-
-            //WebChat objects
-            pcconfiguration = new Purecloudconfiguration() { integrations = new integrations() };
-            webChatApi = new WebChatApi();
-            apiclient = new ApiClient();
-            chatInfo = new CreateWebChatConversationResponse();
-
-            _purecloudconfiguration = purecloudconfiguration;
             _purecloudconfiguration.GetSection("integrations").Bind(pcconfiguration.integrations);
 
-            configuration = new Configuration();
-
+            PureCloudRegionHosts region = PureCloudRegionHosts.us_east_1;
             configuration.ApiClient.setBasePath(region);
 
-            accessTokenInfo = new AuthTokenInfo();
-            accessTokenInfo = configuration.ApiClient.PostToken(
+            AuthTokenInfo accessTokenInfo = configuration.ApiClient.PostToken(
                 pcconfiguration.integrations.credentials.client_id,
                 pcconfiguration.integrations.credentials.client_secret);
             accessTokenInfo.AccessToken = accessTokenInfo.AccessToken;
             accessTokenInfo.TokenType = accessTokenInfo.TokenType;
-
-            configuration.AccessToken = accessTokenInfo.AccessToken;
 
             CreateWebChatConversationRequest chatbody = new CreateWebChatConversationRequest()
             {
@@ -88,15 +87,18 @@ namespace LiveChat.Controllers
                     DisplayName = client.firstname + " " + client.lastname,
                     CustomFields = new Dictionary<string, string>()
                     {
+                        { "Dirección IP","192.168.0.1" },
+                        { "","" },
                         { "phoneNumber", client.customerid.ToString() },
-                        { "customField1Label", "Direccion IP"},
+                        { "customField1Label", "Direccion IP 2"},
                         { "customField1", "10.0.0.1"},
-                        { "customField2Label", "Agent"},
-                        { "customField2", "Value Agent"},
+                        { "customField2Label", ""},
+                        { "customField2", ""},
                         { "customField3Label", ""},
                         { "customField3", ""},
                     },
                     AvatarImageUrl = @"https://d3a63qt71m2kua.cloudfront.net/developer-tools/1554/assets/images/PC-blue-nomark.png"
+
                 }
             };
 
@@ -107,17 +109,19 @@ namespace LiveChat.Controllers
             ViewBag.chatinformation = chatInfo;
             ViewBag.chatbody = chatbody;
             ViewBag.client = client;
-            ViewBag.jwt = chatInfo.Jwt;
-            ViewBag.token = accessTokenInfo.TokenType;
-
             ViewBag.configuration = configuration;
-            ViewBag.webChatApi = webChatApi;
 
-            ViewBag.host = pcconfiguration.integrations.environment.host;
-            ViewBag.api = pcconfiguration.integrations.environment.api;
-            ViewBag.content_type = pcconfiguration.integrations.others.content_type;
+            return View(configuration);
+        }
 
-            return View();
+        private Task Receive(ClientWebSocket socket)
+        {
+            throw new NotImplementedException();
+        }
+
+        private Task Send(ClientWebSocket socket, string v)
+        {
+            throw new NotImplementedException();
         }
 
         [Route("Chat/LogOut")]
@@ -127,97 +131,14 @@ namespace LiveChat.Controllers
         }
 
         [HttpGet]
-        public JsonResult SendMessage(string messagetosend, string chatInfoId, string MemberId, string token, string content_type, string api, string host)
+        public JsonResult SendMessage(string messagetosend, string chatInfoId, string MemberId, Configuration configuration)
         {
-            try
-            {
-                HttpClient client = new HttpClient();
-                var content = new Dictionary<string, string>()
-                {
-                    { "body", messagetosend },
-                    { "bodyType", "standard" }
-                };
-
-                client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("bearer", token);
-                client.BaseAddress = new Uri(api + host);
-                client.DefaultRequestHeaders
-                    .Accept
-                    .Add(new MediaTypeWithQualityHeaderValue(content_type));
-                HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Post, "/api/v2/webchat/guest/conversations/" + chatInfoId + "/members/" + MemberId + "/messages");
-                var json = JsonConvert.SerializeObject(content);
-                request.Content = new StringContent(json, Encoding.UTF8, "application/json");
-
-                HttpResponseMessage result = client.SendAsync(request).Result;
-                result.EnsureSuccessStatusCode();
-                HttpContent _content = result.Content;
-                string _jsonContent = _content.ReadAsStringAsync().Result;
-
-                var _json = JsonConvert.SerializeObject(_jsonContent);
-                return Json(_json);
-            }
-            catch (Exception ex)
-            {
-                //Models.Client client = new Client() { Phone = phone.ToString(), Name = ex.InnerException.Message, Lastname = ex.Message };
-                //return client;
-                ex.Message.ToString();
-                return null;
-            }
+            CreateWebChatMessageRequest message = new CreateWebChatMessageRequest() { Body = messagetosend, BodyType = CreateWebChatMessageRequest.BodyTypeEnum.Standard };
+            //var test = webChatApi.PostWebchatGuestConversationMemberMessagesAsync(chatInfo.Id, chatInfo.Member.Id, message);
+            webChatApi.PostWebchatGuestConversationMemberMessages(chatInfoId, MemberId, message);
+            var json = JsonConvert.SerializeObject(message);
+            return Json(json);
         }
-
-        public JsonResult GetAgentData(string chatInfoId, string MemberId, string token, string content_type, string api, string host)
-        {
-            try
-            {
-                HttpClient client = new HttpClient();
-                var content = new Dictionary<string, string>();
-
-                client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("bearer", token);
-                client.BaseAddress = new Uri(api + host);
-                client.DefaultRequestHeaders
-                    .Accept
-                    .Add(new MediaTypeWithQualityHeaderValue(content_type));
-                HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Post, "/api/v2/webchat/guest/conversations/" + chatInfoId + "/members/" + MemberId);
-                var json = JsonConvert.SerializeObject(content);
-                request.Content = new StringContent(json, Encoding.UTF8, "application/json");
-
-                HttpResponseMessage result = client.SendAsync(request).Result;
-                result.EnsureSuccessStatusCode();
-                HttpContent _content = result.Content;
-                string _jsonContent = _content.ReadAsStringAsync().Result;
-
-                var _json = JsonConvert.SerializeObject(_jsonContent);
-                ViewBag.displayNameAgent = "";
-                ViewBag.avatarImageUrl = "";
-                return Json(_json);
-            }
-            catch (Exception ex)
-            {
-                //Models.Client client = new Client() { Phone = phone.ToString(), Name = ex.InnerException.Message, Lastname = ex.Message };
-                //return client;
-                ex.Message.ToString();
-                return null;
-            }
-        }
-
-
-        public JsonResult GetMessage(string incommingmessage)
-        {
-            try
-            {
-                var _json = JsonConvert.SerializeObject(incommingmessage);
-                ViewBag.displayNameAgent = "";
-                ViewBag.avatarImageUrl = "";
-                return Json(_json);
-            }
-            catch (Exception ex)
-            {
-                //Models.Client client = new Client() { Phone = phone.ToString(), Name = ex.InnerException.Message, Lastname = ex.Message };
-                //return client;
-                ex.Message.ToString();
-                return null;
-            }
-        }
-
 
 
 

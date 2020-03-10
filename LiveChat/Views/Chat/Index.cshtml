@@ -3,10 +3,121 @@
     ViewData["Title"] = "Chat";
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
-
-<link rel="stylesheet" href="@Url.Content("~/css/app.css")">
+@* <link rel="stylesheet" href="@Url.Content("~/css/app.css")">*@
 
 @section scripts {
+
+    <style>
+        *, *:before, *:after {
+            -moz-box-sizing: border-box;
+            -webkit-box-sizing: border-box;
+            box-sizing: border-box;
+        }
+
+        html {
+            font-family: Helvetica, Arial, sans-serif;
+            font-size: 100%;
+            background: #333;
+        }
+
+        #page-wrapper {
+            width: 650px;
+            background: #FFF;
+            padding: 1em;
+            margin: 1em auto;
+            border-top: 5px solid #69c773;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.8);
+        }
+
+        h1 {
+            margin-top: 0;
+        }
+
+        #status {
+            font-size: 0.9rem;
+            margin-bottom: 1rem;
+        }
+
+        .open {
+            color: green;
+        }
+
+        .closed {
+            color: red;
+        }
+
+
+        ul {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+            font-size: 0.95rem;
+        }
+
+            ul li {
+                padding: 0.5rem 0.75rem;
+                border-bottom: 1px solid #EEE;
+            }
+
+                ul li:first-child {
+                    border-top: 1px solid #EEE;
+                }
+
+                ul li span {
+                    display: inline-block;
+                    width: 90px;
+                    font-weight: bold;
+                    color: #999;
+                    font-size: 0.7rem;
+                    text-transform: uppercase;
+                    letter-spacing: 1px;
+                }
+
+        .sent {
+            background-color: #52cef8;
+        }
+
+        .received {
+        }
+
+        #message-form {
+            margin-top: 1.5rem;
+        }
+
+        textarea {
+            width: 100%;
+            padding: 0.5rem;
+            font-size: 1rem;
+            border: 1px solid #D9D9D9;
+            border-radius: 3px;
+            box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.1);
+            min-height: 100px;
+            margin-bottom: 1rem;
+        }
+
+        button {
+            display: inline-block;
+            border-radius: 3px;
+            border: none;
+            font-size: 0.9rem;
+            padding: 0.6rem 1em;
+            color: white;
+            margin: 0 0.25rem;
+            text-align: center;
+            background: #BABABA;
+            border-bottom: 1px solid #999;
+        }
+
+            button[type="submit"] {
+                background: #86b32d;
+                border-bottom: 1px solid #5d7d1f;
+            }
+
+            button:hover {
+                opacity: 0.75;
+                cursor: pointer;
+            }
+    </style>
 
     <script type="text/javascript">
         window.onload = function () {
@@ -16,134 +127,98 @@
             var messagesList = document.getElementById('messages');
             var socketStatus = document.getElementById('status');
             var closeBtn = document.getElementById('close');
-            var clientid = '@ViewBag.chatinformation.Member.Id';
+
 
             // Create a new WebSocket.
             var socket = new WebSocket('@ViewBag.chatinformation.EventStreamUri');
 
-            // Handle any errors that occur.
+
+          // Handle any errors that occur.
             socket.onerror = function (error) {
                 console.log('WebSocket Error: ' + error);
             };
 
-            // Show a connected message when the WebSocket is opened.
+
+          // Show a connected message when the WebSocket is opened.
             socket.onopen = function(event) {
                 @*socketStatus.innerHTML = 'Connected to: >' + event.currentTarget.URL + '<' + @ViewBag.client.queuename;*@
                 socketStatus.innerHTML = 'Connected to: > ' + '@ViewBag.client.queuename';
                 socketStatus.className = 'open';
             };
 
-            // Handle messages sent by the server.
-            socket.onmessage = function (event) {
-                var message = event.data;
-                var obj = JSON.parse(message);
 
-                if (obj.eventBody.sender.id != clientid) {
-                    //messagesList.innerHTML += '<li class="received"><span>Received:</span>NO SON iguales ' + obj.eventBody.sender.id + ' != ' + clientid + '</li>';
-                    if (obj.eventBody.bodyType == "standard") {
-                        messagesList.innerHTML += '<li class="received"><span>Received:</span>' + obj.eventBody.body + '</li>';
-                    } else if (obj.eventBody.bodyType == "notice") {
-                        messagesList.innerHTML += '<li class="received"><span>' + obj.eventBody.body + '</span></li>';                        
-                    } else if (obj.metadata.type == "typing-indicator") {
-                        $('#typerDisplay').text( 'Agent is typing...');
-                        $('.chat__typing').fadeIn(100, function() {
-                            $('.chat__type__body').addClass('typing_display__open');
-                        }).delay(1000).fadeOut(300, function(){
-                            $('.chat__type__body').removeClass('typing_display__open');
-                        });
-                    }
-                } else {
-                    //messagesList.innerHTML += '<li class="received"><span>Received:</span>iguales ' + obj.eventBody.sender.id + ' = ' + clientid + '</li>';
-                }
+          // Handle messages sent by the server.
+          socket.onmessage = function(event) {
+            var message = event.data;
+            messagesList.innerHTML += '<li class="received"><span>Received:</span>' +
+                                       message + '</li>';
+          };
 
 
-            };
+          // Show a disconnected message when the WebSocket is closed.
+          socket.onclose = function(event) {
+            socketStatus.innerHTML = 'Disconnected from @ViewBag.client.queuename.';
+            socketStatus.className = 'closed';
+          };
 
-            // Show a disconnected message when the WebSocket is closed.
-            socket.onclose = function(event) {
-                socketStatus.innerHTML = 'Disconnected from @ViewBag.client.queuename.';
-                socketStatus.className = 'closed';
-            };
 
-            // Send a message when the form is submitted.
-            form.onsubmit = function(e) {
-                e.preventDefault();
+          // Send a message when the form is submitted.
+          form.onsubmit = function(e) {
+            e.preventDefault();
 
-                // Retrieve the message from the textarea.
-                var message = messageField.value;
+            // Retrieve the message from the textarea.
+            var message = messageField.value;
 
-                // Send the message through the WebSocket.
-                socket.send(message);
-                SendMessage();
+            // Send the message through the WebSocket.
+              socket.send(message);
 
-                // Add the message to the messages list.
-                messagesList.innerHTML += '<li class="sent"><span>@ViewBag.client.firstname @ViewBag.client.lastname:</span>' + message + '</li>';
+            // Add the message to the messages list.
+            messagesList.innerHTML += '<li class="sent"><span>Sent:</span>' + message +
+                                      '</li>';
 
-                // Clear out the message field.
-                messageField.value = '';
+            // Clear out the message field.
+            messageField.value = '';
 
             return false;
-            };
+          };
 
 
           // Close the WebSocket connection when the close button is clicked.
-            closeBtn.onclick = function(e) {
-                e.preventDefault();
-                // Close the WebSocket.
-                socket.close();
-                return false;
-            };
+          closeBtn.onclick = function(e) {
+            e.preventDefault();
+
+            // Close the WebSocket.
+            socket.close();
+
+            return false;
+          };
 
         };
+
+
+
     </script>
 
     <script src="https://sdk-cdn.mypurecloud.com/javascript-guest/5.2.0/purecloud-guest-chat-client.min.js"></script>
     <script type="text/javascript">
         function SendMessage() {
-            var messagetosend = $('#message').val();
             $.ajax({
                 url: '/Chat/SendMessage',
                 type: 'get',
-                data:
-                {
-                    messagetosend: messagetosend, chatInfoId: '@ViewBag.chatinformation.Id', MemberId: '@ViewBag.chatinformation.Member.Id', token: '@ViewBag.jwt',
-                    content_type : '@ViewBag.content_type', api : '@ViewBag.api', host : '@ViewBag.host'
-                },
+                data: { messagetosend: 'Test', chatInfoId: '@ViewBag.chatinformation.Id', MemberId: '@ViewBag.chatinformation.Member.Id', configuration: @ViewBag.configuration },
                 datatype: 'json'
-            }).done(function () {
-
+            }).done(function (respuesta) {
+                alert("Ok");
             })
         }
-
-        function GetAgentData() {
-            $.ajax({
-                url: '/Chat/GetAgentData',
-                type: 'get',
-                data:
-                {
-                    chatInfoId: '@ViewBag.chatinformation.Id', MemberId: '@ViewBag.chatinformation.Member.Id', token: '@ViewBag.token',
-                    content_type : '@ViewBag.content_type', api : '@ViewBag.api', host : '@ViewBag.host'
-                },
-                datatype: 'json'
-            }).done(function () {
-
-            })
-        }
-
-        function GetMessage(message) {
-            $.ajax({
-                url: '/Chat/GetMessage',
-                type: 'get',
-                data: { incommingmessage: message },
-                datatype: 'json'
-            }).done(function () {
-
-            })
-        }
-
 
     </script>
 
+    <script type="text/javascript">
+        function ConsultaChat2() {
+            alert("test");
+        }
+    </script>
 }
 
 <header>
@@ -151,30 +226,26 @@
         <a class="nav-link" asp-controller="Chat" asp-action="LogOut"><i class="glyphicon glyphicon-log-out"></i>Log Out</a>
     </nav>
 </header>
+<div class="container">
+    <div class="row">
+        Conversation: @ViewBag.chatinformation.Id - MemberID: @ViewBag.chatinformation.Member.Id - Widget: @ViewBag.chatbody.DeploymentId
+    </div>
+    <div>
+        <input type="submit" class="btn-primary btn-xs btn" onclick="SendMessage()" value="Test  &raquo;" />
+    </div>
+</div>
+<br />
+<br />
+
 <!-- Chat Body -->
-<div class="container-fluid general">
-    <div class="row">
-        <h1>Live Chat - 5Dimes</h1>
-    </div>
-    <div class="row">
-        <div id="status">Connecting...</div>
-    </div>
-    <div class="row" style="max-height:300px">
-        <div class="col-xl-12">
-            <ul id="messages"></ul>
-        </div>
-    </div>
-    <div class="row">
-        <form id="message-form" action="#" method="post" class="col-xl-12">
-            <textarea id="message" placeholder="Write your message here..." required></textarea>
-            <button type="submit">Send Message</button>
-            <button type="button" id="close">Close Connection</button>
-        </form>
-    </div>
-    <div class="row">
-        <div class="chat__typing col-xl-12">
-            <span id="typerDisplay"></span>
-        </div>
-    </div>
+<div id="page-wrapper">
+    <h1>Live Chat - 5Dimes</h1>
+    <div id="status">Connecting...</div>
+    <ul id="messages"></ul>
+    <form id="message-form" action="#" method="post">
+        <textarea id="message" placeholder="Write your message here..." required></textarea>
+        <button type="submit">Send Message</button>
+        <button type="button" id="close">Close Connection</button>
+    </form>
 </div>
 @*<script src="app.js"></script>*@
