@@ -76,8 +76,10 @@
                     }
                 }
 
-                if (obj.eventBody.member.state == "DISCONNECTED" && obj.eventBody.member.id == agentid) {
-                    messagesList.innerHTML += '<li class="received"><img src="' + agentimageUrl + '"><span>' + agentname + ': </span> El agente se desconecto </li>';
+                if (obj.eventBody.bodyType == "member-leave" && obj.eventBody.sender.id == agentid) {
+                    messagesList.innerHTML += '<li class="received"><span></span>The Agent has close the Session</li>';
+                    socket.close();
+                    EndSession();
                 }
             };
 
@@ -85,8 +87,7 @@
             socket.onclose = function(event) {
                 socketStatus.innerHTML = 'Disconnected from ' + queuename + '.';
                 socketStatus.className = 'closed';
-                //UpdateChatSession();
-                EndSession();
+                UpdateChatSession();
             };
 
             // Send a message when the form is submitted.
@@ -108,15 +109,13 @@
                 return false;
             };
 
-
-          // Close the WebSocket connection when the close button is clicked.
+            // Close the WebSocket connection when the close button is clicked.
             closeBtn.onclick = function(e) {
                 e.preventDefault();
                 // Close the WebSocket.
                 socket.close();
                 return false;
             };
-
         };
 
         // OK
@@ -147,6 +146,7 @@
             })
         }
 
+        // OK
         function EndSession() {
             $.ajax({
                 url: '/Chat/EndSession',
@@ -160,16 +160,12 @@
 
         function UpdateChatSession() {
             $.ajax({
-                url: '/Chat/UpdateChatSessionAsync',
+                url: '/Chat/UpdateChatSession',
                 type: 'get',
                 data: { id: tableid, rowindex: rowindex, token: token, content_type : content_type, api : api, host : host },
                 datatype: 'json'
             }).done()
         }
-
-
-
-
     </script>
 
 }

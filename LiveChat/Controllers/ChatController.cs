@@ -97,9 +97,9 @@ namespace LiveChat.Controllers
                         { "customField1Label", "Direccion IP"},
                         { "customField1", GetLocalIPAddress()},
                         { "customField2Label", "Agent"},
-                        { "customField2", "Value Agent"},
-                        { "customField3Label", ""},
-                        { "customField3", ""},
+                        { "customField2", Request.Headers["User-Agent"].ToString()},
+                        { "customField3Label", "IP Address" },
+                        { "customField3", GetLocalIP()},
                     },
                     AvatarImageUrl = @"https://d3a63qt71m2kua.cloudfront.net/developer-tools/1554/assets/images/PC-blue-nomark.png"
                 }
@@ -233,7 +233,7 @@ namespace LiveChat.Controllers
 
         }
 
-        //OK
+        // OK
         private string InsertChatSession(string id, string chatInfoId, string MemberId, string token, string content_type, string api, string host, string jwt)
         {
             try
@@ -288,20 +288,25 @@ namespace LiveChat.Controllers
             }
         }
 
-        // KO
-        public JsonResult UpdateChatSessionAsync(string id, string rowindex, string token, string content_type, string api, string host)
+        // OK
+        public JsonResult UpdateChatSession(string id, string rowindex, string token, string content_type, string api, string host)
         {
             try
             {
                 HttpClient client = new HttpClient();
+                var content = new Dictionary<string, string>() { };
+
                 client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("bearer", token);
                 client.BaseAddress = new Uri(api + host);
                 client.DefaultRequestHeaders
                     .Accept
                     .Add(new MediaTypeWithQualityHeaderValue(content_type));
-                //HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Delete, "/api/v2/flows/datatables/" + id + "/rows/" + rowindex);
-                var result = client.DeleteAsync("/api/v2/flows/datatables/" + id + "/rows/" + rowindex);
-                //result.EnsureSuccessStatusCode();
+                HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Delete, "/api/v2/flows/datatables/" + id + "/rows/" + rowindex);
+                HttpResponseMessage result = client.SendAsync(request).Result;
+                result.EnsureSuccessStatusCode();
+                HttpContent _content = result.Content;
+                string _jsonContent = _content.ReadAsStringAsync().Result;
+                var json = JsonConvert.SerializeObject(_jsonContent);
                 return null;
             }
             catch (Exception ex)
@@ -313,6 +318,7 @@ namespace LiveChat.Controllers
             }
         }
 
+        // OK
         [HttpGet]
         public JsonResult EndSession(string chatInfoId, string MemberId, string jwt, string content_type, string api, string host)
         {
@@ -354,6 +360,18 @@ namespace LiveChat.Controllers
                 }
             }
             throw new Exception("No network adapters with an IPv4 address in the system!");
+        }
+
+        public string GetLocalIP()
+        {
+            IPAddress[] ipv4Addresses = Array.FindAll(
+                Dns.GetHostEntry(string.Empty).AddressList,
+                a => a.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork);
+            if (ipv4Addresses.Count() > 0)
+            {
+                return ipv4Addresses[0].ToString();
+            }
+            return "";
         }
 
     }
