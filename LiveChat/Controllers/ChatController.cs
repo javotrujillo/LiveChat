@@ -22,7 +22,7 @@ using System.Net.Sockets;
 
 namespace LiveChat.Controllers
 {
-    public class ChatController : Controller
+    public class ChatController : Microsoft.AspNetCore.Mvc.Controller
     {
         private readonly ILogger<HomeController> _logger;
         private IConfiguration _purecloudconfiguration;
@@ -35,7 +35,10 @@ namespace LiveChat.Controllers
         public CreateWebChatConversationResponse chatInfo { get; set; }
         public AuthTokenInfo accessTokenInfo { get; set; }
 
+        public List<string> dataagent = new List<string>();
+
         PureCloudRegionHosts region = PureCloudRegionHosts.us_east_1;
+        //PureCloudRegionHosts region = PureCloudRegionHosts.eu_west_1;
 
         [HttpPost]
         [Route("Chat/Index")]
@@ -126,6 +129,8 @@ namespace LiveChat.Controllers
                 );
             ViewBag.newIndex = _lastrowindex;
 
+            ViewBag.Agentname = "";
+
             return View();
 
         }
@@ -174,41 +179,61 @@ namespace LiveChat.Controllers
             }
         }
 
-        public JsonResult GetAgentData(string chatInfoId, string MemberId, string token, string content_type, string api, string host)
+        //OK
+        public JsonResult GetAgentData(string chatInfoId, string token, string content_type, string api, string host)
         {
-            try
+            if (dataagent.Count <= 0)
             {
-                HttpClient client = new HttpClient();
-                var content = new Dictionary<string, string>();
+                try
+                {
+                    HttpClient client = new HttpClient();
 
-                client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("bearer", token);
-                client.BaseAddress = new Uri(api + host);
-                client.DefaultRequestHeaders
-                    .Accept
-                    .Add(new MediaTypeWithQualityHeaderValue(content_type));
-                HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Post, "/api/v2/webchat/guest/conversations/" + chatInfoId + "/members/" + MemberId);
-                var json = JsonConvert.SerializeObject(content);
-                request.Content = new StringContent(json, Encoding.UTF8, "application/json");
+                    client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("bearer", token);
+                    client.BaseAddress = new Uri(api + host);
+                    client.DefaultRequestHeaders
+                        .Accept
+                        .Add(new MediaTypeWithQualityHeaderValue(content_type));
+                    HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Get, "api/v2/webchat/guest/conversations/" + chatInfoId + "/members?excludeDisconnectedMembers=true");
+                    HttpResponseMessage result = client.SendAsync(request).Result;
+                    result.EnsureSuccessStatusCode();
+                    HttpContent _content = result.Content;
+                    string _jsonContent = _content.ReadAsStringAsync().Result;
+                    JObject tabledata = JObject.Parse(_jsonContent);
+                    JArray participants = (JArray)tabledata["entities"];
 
-                HttpResponseMessage result = client.SendAsync(request).Result;
-                result.EnsureSuccessStatusCode();
-                HttpContent _content = result.Content;
-                string _jsonContent = _content.ReadAsStringAsync().Result;
+                    foreach (JObject item in participants)
+                    {
+                        if (item.GetValue("role").ToString() == "AGENT")
+                        {
+                            ViewBag.Agentname = item.GetValue("displayName").ToString();
+                            ViewBag.AgentImageUrl = item.GetValue("avatarImageUrl").ToString();
+                            dataagent.Add(item.GetValue("displayName").ToString());
+                            dataagent.Add(item.GetValue("avatarImageUrl").ToString());
+                            dataagent.Add(item.GetValue("id").ToString());
+                        }
+                    }
 
-                var _json = JsonConvert.SerializeObject(_jsonContent);
-                ViewBag.displayNameAgent = "";
-                ViewBag.avatarImageUrl = "";
+                    var _json = JsonConvert.SerializeObject(dataagent);
+                    return Json(_json);
+                }
+                catch (Exception ex)
+                {
+                    dataagent.Add("Agent");
+                    dataagent.Add("");
+                    dataagent.Add("");
+                    var _json = JsonConvert.SerializeObject(dataagent);
+                    return Json(_json);
+                }
+            }
+            else
+            {
+                var _json = JsonConvert.SerializeObject(dataagent);
                 return Json(_json);
             }
-            catch (Exception ex)
-            {
-                //Models.Client client = new Client() { Phone = phone.ToString(), Name = ex.InnerException.Message, Lastname = ex.Message };
-                //return client;
-                ex.Message.ToString();
-                return null;
-            }
+
         }
 
+        //OK
         private string InsertChatSession(string id, string chatInfoId, string MemberId, string token, string content_type, string api, string host, string jwt)
         {
             try
@@ -263,7 +288,8 @@ namespace LiveChat.Controllers
             }
         }
 
-        public async Task<JsonResult> UpdateChatSessionAsync(string id, string rowindex, string token, string content_type, string api, string host)
+        // KO
+        public JsonResult UpdateChatSessionAsync(string id, string rowindex, string token, string content_type, string api, string host)
         {
             try
             {
@@ -274,8 +300,8 @@ namespace LiveChat.Controllers
                     .Accept
                     .Add(new MediaTypeWithQualityHeaderValue(content_type));
                 //HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Delete, "/api/v2/flows/datatables/" + id + "/rows/" + rowindex);
-                var result = await client.DeleteAsync("/api/v2/flows/datatables/" + id + "/rows/" + rowindex);
-                result.EnsureSuccessStatusCode();
+                var result = client.DeleteAsync("/api/v2/flows/datatables/" + id + "/rows/" + rowindex);
+                //result.EnsureSuccessStatusCode();
                 return null;
             }
             catch (Exception ex)
@@ -287,24 +313,31 @@ namespace LiveChat.Controllers
             }
         }
 
-        public async Task<JsonResult> EndSessionAsync(string chatInfoId, string MemberId, string jwt, string content_type, string api, string host)
+        [HttpGet]
+        public JsonResult EndSession(string chatInfoId, string MemberId, string jwt, string content_type, string api, string host)
         {
+            //var result = await client.DeleteAsync("/api/v2/webchat/guest/conversations/" + chatInfoId + "/members/" + MemberId);
+
             try
             {
                 HttpClient client = new HttpClient();
+
                 client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("bearer", jwt);
                 client.BaseAddress = new Uri(api + host);
                 client.DefaultRequestHeaders
                     .Accept
                     .Add(new MediaTypeWithQualityHeaderValue(content_type));
-                var result = await client.DeleteAsync("/api/v2/webchat/guest/conversations/" + chatInfoId + "/members/" + MemberId);
+                HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Delete, "/api/v2/webchat/guest/conversations/" + chatInfoId + "/members/" + MemberId);
+                HttpResponseMessage result = client.SendAsync(request).Result;
                 result.EnsureSuccessStatusCode();
-                return null;
+                HttpContent _content = result.Content;
+                string _jsonContent = _content.ReadAsStringAsync().Result;
+
+                var _json = JsonConvert.SerializeObject(_jsonContent);
+                return Json(_json);
             }
             catch (Exception ex)
             {
-                //Models.Client client = new Client() { Phone = phone.ToString(), Name = ex.InnerException.Message, Lastname = ex.Message };
-                //return client;
                 ex.Message.ToString();
                 return null;
             }

@@ -9,6 +9,25 @@
 @section scripts {
 
     <script type="text/javascript">
+        var streamUri = '@ViewBag.chatinformation.EventStreamUri';
+        var queuename = '@ViewBag.client.queuename';
+        var firstname = '@ViewBag.client.firstname';
+        var lastname = '@ViewBag.client.lastname';
+        var jwt = '@ViewBag.jwt';
+        var token = '@ViewBag.token';
+        var memberid = '@ViewBag.chatinformation.Member.Id';
+        var host = '@ViewBag.host';
+        var api = '@ViewBag.api';
+        var chatInfoId = '@ViewBag.chatinformation.Id';
+        var content_type = '@ViewBag.content_type';
+        var tableid = '@ViewBag.tableid';
+
+        var rowindex = '@ViewBag.newIndex';
+
+        var agentname = '';
+        var agentimageUrl = '';
+        var agentid = '';
+
         window.onload = function () {
             // Get references to elements on the page.
             var form = document.getElementById('message-form');
@@ -19,7 +38,7 @@
             var clientid = '@ViewBag.chatinformation.Member.Id';
 
             // Create a new WebSocket.
-            var socket = new WebSocket('@ViewBag.chatinformation.EventStreamUri');
+            var socket = new WebSocket(streamUri);
 
             // Handle any errors that occur.
             socket.onerror = function (error) {
@@ -29,7 +48,7 @@
             // Show a connected message when the WebSocket is opened.
             socket.onopen = function(event) {
                 @*socketStatus.innerHTML = 'Connected to: >' + event.currentTarget.URL + '<' + @ViewBag.client.queuename;*@
-                socketStatus.innerHTML = 'Connected to: > ' + '@ViewBag.client.queuename';
+                socketStatus.innerHTML = 'Connected to: > ' + queuename;
                 socketStatus.className = 'open';
             };
 
@@ -38,12 +57,15 @@
                 var message = event.data;
                 var obj = JSON.parse(message);
 
+                if (obj.eventBody.bodyType == "member-join") {
+                    GetAgentData();
+                }
+
                 if (obj.eventBody.sender.id != clientid) {
-                    //messagesList.innerHTML += '<li class="received"><span>Received:</span>NO SON iguales ' + obj.eventBody.sender.id + ' != ' + clientid + '</li>';
                     if (obj.eventBody.bodyType == "standard") {
-                        messagesList.innerHTML += '<li class="received"><span>Received:</span>' + obj.eventBody.body + '</li>';
+                        messagesList.innerHTML += '<li class="received"><img src="' + agentimageUrl + '"><span>' + agentname + ': </span>' + obj.eventBody.body + '</li>';
                     } else if (obj.eventBody.bodyType == "notice") {
-                        messagesList.innerHTML += '<li class="received"><span>' + obj.eventBody.body + '</span></li>';
+                        messagesList.innerHTML += '<li class="received" align="center"><span>' + obj.eventBody.body + '</span></li>';
                     } else if (obj.metadata.type == "typing-indicator") {
                         $('#typerDisplay').text( 'Agent is typing...');
                         $('.chat__typing').fadeIn(100, function() {
@@ -52,18 +74,18 @@
                             $('.chat__type__body').removeClass('typing_display__open');
                         });
                     }
-                } else {
-                    //messagesList.innerHTML += '<li class="received"><span>Received:</span>iguales ' + obj.eventBody.sender.id + ' = ' + clientid + '</li>';
                 }
 
-
+                if (obj.eventBody.member.state == "DISCONNECTED" && obj.eventBody.member.id == agentid) {
+                    messagesList.innerHTML += '<li class="received"><img src="' + agentimageUrl + '"><span>' + agentname + ': </span> El agente se desconecto </li>';
+                }
             };
 
             // Show a disconnected message when the WebSocket is closed.
             socket.onclose = function(event) {
-                socketStatus.innerHTML = 'Disconnected from @ViewBag.client.queuename.';
+                socketStatus.innerHTML = 'Disconnected from ' + queuename + '.';
                 socketStatus.className = 'closed';
-                UpdateChatSession();
+                //UpdateChatSession();
                 EndSession();
             };
 
@@ -76,13 +98,13 @@
 
                 // Send the message through the WebSocket.
                 socket.send(message);
-                SendMessage();
+                    SendMessage();
 
                 // Add the message to the messages list.
-                messagesList.innerHTML += '<li class="sent"><span>@ViewBag.client.firstname @ViewBag.client.lastname:</span>' + message + '</li>';
+                messagesList.innerHTML += '<li class="sent"><span>' + firstname + ' ' + lastname + ':</span>' + message + '</li>';
 
                 // Clear out the message field.
-                messageField.value = '';
+                messageField.value = "";
                 return false;
             };
 
@@ -96,51 +118,42 @@
             };
 
         };
-    </script>
 
-    <script type="text/javascript">
+        // OK
         function SendMessage() {
             var messagetosend = $('#message').val();
             $.ajax({
                 url: '/Chat/SendMessage',
                 type: 'get',
-                data:
-                {
-                    messagetosend: messagetosend, chatInfoId: '@ViewBag.chatinformation.Id', MemberId: '@ViewBag.chatinformation.Member.Id', token: '@ViewBag.jwt',
-                    content_type : '@ViewBag.content_type', api : '@ViewBag.api', host : '@ViewBag.host'
-                },
+                data: { messagetosend: messagetosend, chatInfoId: chatInfoId, MemberId: memberid, token: jwt, content_type : content_type, api : api, host : host },
                 datatype: 'json'
             }).done(function () {
 
+            })
+        }
+
+        // OK
+        function GetAgentData() {
+            $.ajax({
+                url: '/Chat/GetAgentData',
+                type: 'get',
+                data: { chatInfoId: chatInfoId, token: jwt, content_type : content_type, api : api, host : host },
+                datatype: 'json'
+            }).done(function (response) {
+                var dataagent = JSON.parse(response)
+                agentname = dataagent[0]
+                agentimageUrl = dataagent[1]
+                agentid = dataagent[2]
             })
         }
 
         function EndSession() {
             $.ajax({
-                url: '/Chat/EndSessionAsync',
+                url: '/Chat/EndSession',
                 type: 'get',
-                data:
-                {
-                    chatInfoId: '@ViewBag.chatinformation.Id', MemberId: '@ViewBag.chatinformation.Member.Id', token: '@ViewBag.jwt',
-                    content_type : '@ViewBag.content_type', api : '@ViewBag.api', host : '@ViewBag.host'
-                },
+                data: { chatInfoId: chatInfoId, MemberId: memberid, jwt : jwt, content_type : content_type, api : api, host : host },
                 datatype: 'json'
             }).done(function () {
-
-            })
-        }
-
-        function InsertChatSession() {
-            $.ajax({
-                url: '/Chat/InsertChatSession',
-                type: 'get',
-                data:
-                {
-                    id: '@ViewBag.tableid', chatInfoId: '@ViewBag.chatinformation.Id', MemberId: '@ViewBag.chatinformation.Member.Id', token: '@ViewBag.token',
-                    content_type : '@ViewBag.content_type', api : '@ViewBag.api', host : '@ViewBag.host', jwt : '@ViewBag.jwt'
-                },
-                datatype: 'json'
-            }).done(function (data) {
 
             })
         }
@@ -149,28 +162,26 @@
             $.ajax({
                 url: '/Chat/UpdateChatSessionAsync',
                 type: 'get',
-                data:
-                {
-                    id: '@ViewBag.tableid', rowindex: '@ViewBag.newIndex', token: '@ViewBag.token',
-                    content_type : '@ViewBag.content_type', api : '@ViewBag.api', host : '@ViewBag.host'
-                },
+                data: { id: tableid, rowindex: rowindex, token: token, content_type : content_type, api : api, host : host },
                 datatype: 'json'
             }).done()
         }
+
+
 
 
     </script>
 
 }
 
-<header>
+@*<header>
     <nav class="navbar navbar-light bg-light justify-content-end">
         <a class="nav-link" asp-controller="Chat" asp-action="LogOut"><i class="glyphicon glyphicon-log-out"></i>Home</a>
     </nav>
-</header>
+</header>*@
 
 @*<div class="container">
-        <a class="nav-link" onclick="UpdateChatSession()"><i class="glyphicon-log-out"></i>UpdateChatSession</a>
+        <a class="nav-link" onclick="Test()"><i class="glyphicon-log-out"></i>UpdateChatSession</a>
     </div>*@
 
 <!-- Chat Body -->
@@ -181,7 +192,7 @@
     <div class="row">
         <div id="status">Connecting...</div>
     </div>
-    <div class="row" style="max-height:300px">
+    <div class="row">
         <div class="col-xl-12">
             <ul id="messages"></ul>
         </div>
@@ -194,7 +205,7 @@
         </form>
     </div>
     <div class="row">
-        <div class="chat__typing col-xl-12">
+        <div class="chat__typing">
             <span id="typerDisplay"></span>
         </div>
     </div>
