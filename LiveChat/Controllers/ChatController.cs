@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using LiveChat.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.Extensions.Logging;
 using PureCloudPlatform.Client.V2.Client;
 using PureCloudPlatform.Client.V2.Api;
@@ -94,12 +95,13 @@ namespace LiveChat.Controllers
                     CustomFields = new Dictionary<string, string>()
                     {
                         { "phoneNumber", client.customerid.ToString() },
-                        { "customField1Label", "Direccion IP"},
-                        { "customField1", GetLocalIPAddress()},
-                        { "customField2Label", "Agent"},
-                        { "customField2", Request.Headers["User-Agent"].ToString()},
-                        { "customField3Label", "IP Address" },
-                        { "customField3", GetLocalIP()},
+                        { "customField1Label", "IP Address"},
+                        { "customField1", GetUserIP()},
+                        { "customField2Label", "IP Address" },
+                        { "customField2", GetUserIP2()},
+                        { "customField3Label", "Agent"},
+                        { "customField3", Request.Headers["User-Agent"].ToString()},
+
                     },
                     AvatarImageUrl = @"https://d3a63qt71m2kua.cloudfront.net/developer-tools/1554/assets/images/PC-blue-nomark.png"
                 }
@@ -319,7 +321,6 @@ namespace LiveChat.Controllers
         }
 
         // OK
-        [HttpGet]
         public JsonResult EndSession(string chatInfoId, string MemberId, string jwt, string content_type, string api, string host)
         {
             //var result = await client.DeleteAsync("/api/v2/webchat/guest/conversations/" + chatInfoId + "/members/" + MemberId);
@@ -372,6 +373,44 @@ namespace LiveChat.Controllers
                 return ipv4Addresses[0].ToString();
             }
             return "";
+        }
+
+        public string GetUserIP()
+        {
+            string ipList = "";
+
+            ipList = "192.11.1.1";
+
+            ipList = Request.HttpContext.Connection.RemoteIpAddress.ToString();
+            
+
+            return ipList;
+        }
+
+        public string GetUserIP2()
+        {
+            string ip = "";
+            foreach (IPAddress item in Dns.GetHostEntry(Dns.GetHostName()).AddressList)
+            {
+                ip += " " + item.ToString();
+            }
+
+            string ipList = "192.11.1.1";
+            ipList = Request.Headers["HTTP_INCAP_CLIENT_IP"];
+            if (!string.IsNullOrEmpty(ipList))
+            {
+                return ipList.Split(',')[0];
+            }
+            ipList = Request.Headers["HTTP_X_FORWARDED_FOR"];
+            if (!string.IsNullOrEmpty(ipList))
+            {
+                return ipList.Split(',')[0];
+            }
+            else
+            {
+                ipList = Request.Headers["REMOTE_ADDR"];
+            }
+            return ipList; ;
         }
 
     }
