@@ -10,6 +10,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using LiveChat.Models;
 using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.AspNetCore.Http;
 
 namespace LiveChat
 {
@@ -29,10 +30,27 @@ namespace LiveChat
             services.AddControllersWithViews();
             services.Configure<Purecloudconfiguration>(Configuration.GetSection("integrations"));
 
+            //Added to Get IP
             services.Configure<ForwardedHeadersOptions>(options =>
             {
                 options.ForwardedHeaders =
                     ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+            });
+
+            //Added to Production
+            services.AddHsts(options =>
+            {
+                options.Preload = true;
+                options.IncludeSubDomains = true;
+                options.MaxAge = TimeSpan.FromDays(60);
+                options.ExcludedHosts.Add("example.com");
+                options.ExcludedHosts.Add("www.example.com");
+            });
+
+            services.AddHttpsRedirection(options =>
+            {
+                options.RedirectStatusCode = StatusCodes.Status307TemporaryRedirect;
+                options.HttpsPort = 5001;
             });
         }
 
@@ -76,13 +94,10 @@ namespace LiveChat
             });
 
             //Added to get local IP
-            //app.UseForwardedHeaders(new ForwardedHeadersOptions
-            //{
-            //    ForwardedHeaders = ForwardedHeaders.XForwardedFor |
-            //      ForwardedHeaders.XForwardedProto
-            //});
             app.UseForwardedHeaders();
 
+            //Added to Production
+            app.UseCookiePolicy();
 
 
 
