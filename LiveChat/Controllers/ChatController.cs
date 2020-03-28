@@ -39,14 +39,15 @@ namespace LiveChat.Controllers
 
         public List<string> dataagent = new List<string>();
 
-        //PureCloudRegionHosts region = PureCloudRegionHosts.us_east_1;
-        PureCloudRegionHosts region = PureCloudRegionHosts.eu_west_1;
+        PureCloudRegionHosts region = PureCloudRegionHosts.us_east_1;
+        //PureCloudRegionHosts region = PureCloudRegionHosts.eu_west_1;
 
         [HttpPost]
         [Route("Chat/Index")]
         public async Task<IActionResult> IndexAsync([FromServices] IConfiguration purecloudconfiguration)
         {
             var fullname = Request.Form["name"].ToString().Split(' ');
+            string skill;
             client = new Client()
             {
                 firstname = fullname[0],
@@ -77,6 +78,17 @@ namespace LiveChat.Controllers
 
             configuration.AccessToken = accessTokenInfo.AccessToken;
 
+            try
+            {
+                int indexchat = client.queuename.IndexOf("-");
+                skill = client.queuename.Substring(0, indexchat).Trim();
+                
+            }
+            catch (Exception)
+            {
+                skill = client.queuename.ToString();
+            }
+
             CreateWebChatConversationRequest chatbody = new CreateWebChatConversationRequest()
             {
                 DeploymentId = pcconfiguration.integrations.deployment.id,
@@ -86,7 +98,7 @@ namespace LiveChat.Controllers
                     Language = pcconfiguration.integrations.others.language,
                     TargetType = WebChatRoutingTarget.TargetTypeEnum.Queue,
                     TargetAddress = client.queuename.ToString(),
-                    Skills = new List<string>() { client.queuename.ToString() },
+                    Skills = new List<string>() { skill },
                     Priority = 5
 
                 },
@@ -206,24 +218,38 @@ namespace LiveChat.Controllers
 
                     foreach (JObject item in participants)
                     {
+#if DEBUG
+                        Console.WriteLine(item.GetValue("role").ToString());
+#endif
                         if (item.GetValue("role").ToString() == "AGENT")
                         {
-                            ViewBag.Agentname = item.GetValue("displayName").ToString();
-                            ViewBag.AgentImageUrl = item.GetValue("avatarImageUrl").ToString();
+#if DEBUG
+                            Console.WriteLine("displayName: " + item.GetValue("displayName").ToString());
+                            Console.WriteLine("avatarImageUrl: " + item.GetValue("avatarImageUrl").ToString());
+                            Console.WriteLine("id: " + item.GetValue("id").ToString());
+#endif
+                            //ViewBag.Agentname = item.GetValue("displayName").ToString();
+                            //ViewBag.AgentImageUrl = item.GetValue("avatarImageUrl").ToString();
                             dataagent.Add(item.GetValue("displayName").ToString());
                             dataagent.Add(item.GetValue("avatarImageUrl").ToString());
                             dataagent.Add(item.GetValue("id").ToString());
                         }
                     }
 
+#if DEBUG
+                    Console.WriteLine("OKA: " + dataagent[1]);
+#endif
                     var _json = JsonConvert.SerializeObject(dataagent);
                     return Json(_json);
                 }
                 catch (Exception ex)
                 {
-                    dataagent.Add("Agent");
+                    dataagent.Add("5Dimes");
+                    dataagent.Add("../content/clientimage.png");
                     dataagent.Add("");
-                    dataagent.Add("");
+#if DEBUG
+                    Console.WriteLine("ERROR: " + dataagent[1]);
+#endif
                     var _json = JsonConvert.SerializeObject(dataagent);
                     return Json(_json);
                 }
@@ -364,21 +390,9 @@ namespace LiveChat.Controllers
             throw new Exception("No network adapters with an IPv4 address in the system!");
         }
 
-        public string GetLocalIP()
-        {
-            IPAddress[] ipv4Addresses = Array.FindAll(
-                Dns.GetHostEntry(string.Empty).AddressList,
-                a => a.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork);
-            if (ipv4Addresses.Count() > 0)
-            {
-                return ipv4Addresses[0].ToString();
-            }
-            return "";
-        }
-
         public string GetUserIP()
         {
-            string ipList = "";
+            string ipList;
             try
             {
                 ipList = HttpContext.Request.Headers["X-FORWARDED-FOR"];

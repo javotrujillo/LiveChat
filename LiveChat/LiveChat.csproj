@@ -23,7 +23,13 @@
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
+    <Content Remove="wwwroot\content\clientimage.png" />
+  </ItemGroup>
+  <ItemGroup>
     <Content Update="wwwroot\chaticon.ico">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Update="wwwroot\content\clientimage.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
   </ItemGroup>

@@ -11,15 +11,14 @@ html {
 }
 
 #page-wrapper {
-    width: 650px;
+    width: 550px;
     background: #FFF;
     padding: 1em;
     margin: 1em auto;
     border-top: 5px solid #69c773;
     box-shadow: 0 2px 10px rgba(0,0,0,0.8);
 
-
-    max-height: 200px;
+    max-height: 700px;
 }
 
 h1 {
@@ -48,7 +47,7 @@ ul {
 
     border: 2px solid #ccc;
     overflow: scroll;
-    height:200px;
+    height:450px;
 }
 
     ul li {
@@ -61,19 +60,37 @@ ul {
         }
 
         ul li span {
-            display: inline-block;
+            
             width: 90px;
             font-weight: bold;
             color: #999;
-            font-size: 0.7rem;
+            font-size: 0.8rem;
             text-transform: uppercase;
             letter-spacing: 1px;
+        }
+
+        ul li  p {
+            bottom: 0px;
+            left: 0px;
+            right: 0px;
+            margin-bottom: 0px;
+            font-style: italic;
+            font-size: 8px;
+            color: #999999;
         }
 
 .sent {
     background-color: #F7F7F7;
     text-align: right;
+    background-position: 100%;
+    padding-right: .6em;
+    width: 100%
 }
+    .sent img {
+        border-radius: 15px;
+        width: 15px;
+        height: 15px;
+    }
 
 .received {
     width: 100%;
@@ -100,7 +117,7 @@ textarea {
 
     height:50px;
     min-height:40px;
-    max-height:50px;
+    max-height:60px;
 }
 
 button {

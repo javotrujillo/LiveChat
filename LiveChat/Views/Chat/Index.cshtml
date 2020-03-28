@@ -1,5 +1,4 @@
-﻿
-@{
+﻿@{
     ViewData["Title"] = "Chat";
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
@@ -28,8 +27,10 @@
         var agentimageUrl = '';
         var agentid = '';
 
+
+
         window.onload = function () {
-            // Get references to elements on the page.
+            @* // Get references to elements on the page. *@ 
             var form = document.getElementById('message-form');
             var messageField = document.getElementById('message');
             var messagesList = document.getElementById('messages');
@@ -37,22 +38,24 @@
             var closeBtn = document.getElementById('close');
             var clientid = '@ViewBag.chatinformation.Member.Id';
 
-            // Create a new WebSocket.
+            var btnsend = document.getElementById("sendmessage");
+
+            @* // Create a new WebSocket.  *@ 
             var socket = new WebSocket(streamUri);
 
-            // Handle any errors that occur.
+            @* // Handle any errors that occur. *@
             socket.onerror = function (error) {
                 console.log('WebSocket Error: ' + error);
             };
 
-            // Show a connected message when the WebSocket is opened.
+            @* // Show a connected message when the WebSocket is opened. *@
             socket.onopen = function(event) {
                 @*socketStatus.innerHTML = 'Connected to: >' + event.currentTarget.URL + '<' + @ViewBag.client.queuename;*@
-                socketStatus.innerHTML = 'Connected to: > ' + queuename;
+                socketStatus.innerHTML = 'Connected to ' + queuename;
                 socketStatus.className = 'open';
             };
 
-            // Handle messages sent by the server.
+            @* // Handle messages sent by the server. *@
             socket.onmessage = function (event) {
                 var message = event.data;
                 var obj = JSON.parse(message);
@@ -63,9 +66,12 @@
 
                 if (obj.eventBody.sender.id != clientid) {
                     if (obj.eventBody.bodyType == "standard") {
-                        messagesList.innerHTML += '<li class="received"><img src="' + agentimageUrl + '"><span>' + agentname + ': </span>' + obj.eventBody.body + '</li>';
+                        var today = new Date();
+                        messagesList.innerHTML += '<li class="received" tabindex="-1"><img src="' + agentimageUrl + '"><span>' + agentname + ':</span>' + obj.eventBody.body
+                            + '<p>' + today.getHours() + ":" + today.getMinutes() + ":" + today.getSeconds() + '</p>'
+                            + '</li>';
                     } else if (obj.eventBody.bodyType == "notice") {
-                        messagesList.innerHTML += '<li class="received" align="center"><span>' + obj.eventBody.body + '</span></li>';
+                        messagesList.innerHTML += '<li class="received" tabindex="-1">' + obj.eventBody.body + '</li>';
                     } else if (obj.metadata.type == "typing-indicator") {
                         $('#typerDisplay').text( 'Agent is typing...');
                         $('.chat__typing').fadeIn(100, function() {
@@ -77,42 +83,53 @@
                 }
 
                 if (obj.eventBody.bodyType == "member-leave" && obj.eventBody.sender.id == agentid) {
-                    messagesList.innerHTML += '<li class="received"><span></span>The Agent has close the Session</li>';
+                    messagesList.innerHTML += '<li class="received" tabindex="-1">' + agentname + ' left conversation. Conversation Ended</li>';
                     socket.close();
-                    EndSession();
                 }
+
+                @* // Go To the last Child *@
+                $('#messages li:visible:last').focus();
+
             };
 
-            // Show a disconnected message when the WebSocket is closed.
+            @* // Show a disconnected message when the WebSocket is closed.  *@
             socket.onclose = function(event) {
                 socketStatus.innerHTML = 'Disconnected from ' + queuename + '.';
                 socketStatus.className = 'closed';
+                //document.getElementById("message").disabled = true;
+                messageField.disabled = true;
+                btnsend.disabled = true;
                 UpdateChatSession();
             };
 
-            // Send a message when the form is submitted.
+            @* // Send a message when the form is submitted. *@ 
             form.onsubmit = function(e) {
                 e.preventDefault();
 
-                // Retrieve the message from the textarea.
+                @* // Retrieve the message from the textarea. *@
                 var message = messageField.value;
 
-                // Send the message through the WebSocket.
+                @* // Send the message through the WebSocket *@ 
                 socket.send(message);
-                    SendMessage();
+                SendMessage();
 
-                // Add the message to the messages list.
-                messagesList.innerHTML += '<li class="sent"><span>' + firstname + ' ' + lastname + ':</span>' + message + '</li>';
+                @* // Add the message to the messages list. *@
+                var today = new Date();
+                messagesList.innerHTML += '<li class="sent" tabindex="-1"><img src="../content/clientimage.png"></i><span>' + firstname + " " + lastname + ':</span>' + message
+                    + '<p>' + today.getHours() + ":" + today.getMinutes() + ":" + today.getSeconds() + '</p>'
+                    + '</li>';
+                $('#messages li:visible:last').focus();
 
-                // Clear out the message field.
+                @* // Clear out the message field.  *@
                 messageField.value = "";
                 return false;
             };
 
-            // Close the WebSocket connection when the close button is clicked.
+            @* // Close the WebSocket connection when the close button is clicked. *@ 
             closeBtn.onclick = function(e) {
                 e.preventDefault();
-                // Close the WebSocket.
+                @* // Close the WebSocket. *@
+                EndSession();
                 socket.close();
                 return false;
             };
@@ -166,19 +183,19 @@
                 datatype: 'json'
             }).done()
         }
+
+        function process(e) {
+            var code = (e.keyCode ? e.keyCode : e.which);
+            if (code == 13 && !code.shiftKey) {
+                //alert("Sending your Message : " + document.getElementById('message').value);
+                $('form').submit();
+            }
+        }
+
     </script>
 
+
 }
-
-@*<header>
-    <nav class="navbar navbar-light bg-light justify-content-end">
-        <a class="nav-link" asp-controller="Chat" asp-action="LogOut"><i class="glyphicon glyphicon-log-out"></i>Home</a>
-    </nav>
-</header>*@
-
-@*<div class="container">
-        <a class="nav-link" onclick="Test()"><i class="glyphicon-log-out"></i>UpdateChatSession</a>
-    </div>*@
 
 <!-- Chat Body -->
 <div class="container-fluid general">
@@ -189,14 +206,14 @@
         <div id="status">Connecting...</div>
     </div>
     <div class="row">
-        <div class="col-xl-12">
+        <div id="chatmessages" class="col-xl-12">
             <ul id="messages"></ul>
         </div>
     </div>
     <div class="row">
         <form id="message-form" action="#" method="post" class="col-xl-12">
-            <textarea id="message" placeholder="Write your message here..." required></textarea>
-            <button type="submit">Send Message</button>
+            <textarea id="message" placeholder="Write your message here..." onkeypress="process(event, this)" required></textarea>
+            <button type="submit" id="sendmessage">Send Message</button>
             <button type="button" id="close">Close Chat</button>
         </form>
     </div>
@@ -206,4 +223,3 @@
         </div>
     </div>
 </div>
-@*<script src="app.js"></script>*@
