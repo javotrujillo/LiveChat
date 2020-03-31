@@ -42,6 +42,7 @@ namespace LiveChat.Controllers
         PureCloudRegionHosts region = PureCloudRegionHosts.us_east_1;
         //PureCloudRegionHosts region = PureCloudRegionHosts.eu_west_1;
 
+
         [HttpPost]
         [Route("Chat/Index")]
         public async Task<IActionResult> IndexAsync([FromServices] IConfiguration purecloudconfiguration)
@@ -130,8 +131,8 @@ namespace LiveChat.Controllers
             ViewBag.jwt = chatInfo.Jwt;
             ViewBag.token = accessTokenInfo.AccessToken;
 
-            ViewBag.configuration = configuration;
-            ViewBag.webChatApi = webChatApi;
+            //ViewBag.configuration = configuration;
+            //ViewBag.webChatApi = webChatApi;
 
             ViewBag.host = pcconfiguration.integrations.environment.host;
             ViewBag.api = pcconfiguration.integrations.environment.api;
@@ -142,6 +143,7 @@ namespace LiveChat.Controllers
                 pcconfiguration.integrations.others.content_type, pcconfiguration.integrations.environment.api,
                 pcconfiguration.integrations.environment.host, chatInfo.Jwt
                 );
+
             ViewBag.newIndex = _lastrowindex;
 
             ViewBag.Agentname = "";
@@ -156,112 +158,118 @@ namespace LiveChat.Controllers
             return RedirectToAction("Index", "home");
         }
 
-        [HttpGet]
-        public JsonResult SendMessage(string messagetosend, string chatInfoId, string MemberId, string token, string content_type, string api, string host)
+        // OK
+        [HttpPost]
+        [Route("Chat/SendMessage")]
+        public async Task<JsonResult> SendMessageAsync(string messagetosend, string chatInfoId, string memberId, string token, [FromServices] IConfiguration purecloudconfiguration)
         {
             try
             {
-                HttpClient client = new HttpClient();
-                var content = new Dictionary<string, string>()
+                webChatApi = new WebChatApi();
+
+                pcconfiguration = new Purecloudconfiguration() { integrations = new integrations() };
+                _purecloudconfiguration = purecloudconfiguration;
+                _purecloudconfiguration.GetSection("integrations").Bind(pcconfiguration.integrations);
+
+                webChatApi.Configuration.DefaultHeader.Clear();
+                webChatApi.Configuration.AddDefaultHeader("Content-Type", pcconfiguration.integrations.others.content_type);
+                webChatApi.Configuration.AddDefaultHeader("Authorization", "bearer " + token);
+
+                CreateWebChatMessageRequest messageRequest = new CreateWebChatMessageRequest()
                 {
-                    { "body", messagetosend },
-                    { "bodyType", "standard" }
+                    BodyType = CreateWebChatMessageRequest.BodyTypeEnum.Standard,
+                    Body = messagetosend
                 };
-
-                client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("bearer", token);
-                client.BaseAddress = new Uri(api + host);
-                client.DefaultRequestHeaders
-                    .Accept
-                    .Add(new MediaTypeWithQualityHeaderValue(content_type));
-                HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Post, "/api/v2/webchat/guest/conversations/" + chatInfoId + "/members/" + MemberId + "/messages");
-                var json = JsonConvert.SerializeObject(content);
-                request.Content = new StringContent(json, Encoding.UTF8, "application/json");
-
-                HttpResponseMessage result = client.SendAsync(request).Result;
-                result.EnsureSuccessStatusCode();
-                HttpContent _content = result.Content;
-                string _jsonContent = _content.ReadAsStringAsync().Result;
-
-                var _json = JsonConvert.SerializeObject(_jsonContent);
+                PureCloudPlatform.Client.V2.Model.WebChatMessage webChatMessage = await webChatApi.PostWebchatGuestConversationMemberMessagesAsync(chatInfoId, memberId, messageRequest);
+                string result = webChatMessage.ToJson();
+                JObject _result = JObject.Parse(result);
+                var _json = JsonConvert.SerializeObject(_result);
                 return Json(_json);
             }
-            catch (Exception ex)
+            catch (ApiException ex)
             {
-                //Models.Client client = new Client() { Phone = phone.ToString(), Name = ex.InnerException.Message, Lastname = ex.Message };
-                //return client;
-                ex.Message.ToString();
-                return null;
+                PureCloudPlatform.Client.V2.Model.WebChatMessage webChatMessage = new WebChatMessage()
+                {
+                    BodyType = WebChatMessage.BodyTypeEnum.Notice,
+                    Body = ex.Message
+                };
+                string result = webChatMessage.ToJson();
+                JObject _result = JObject.Parse(result);
+                var _json = JsonConvert.SerializeObject(_result);
+                return Json(_json);
             }
         }
 
         //OK
-        public JsonResult GetAgentData(string chatInfoId, string token, string content_type, string api, string host)
+        [HttpPost]
+        [Route("Chat/GetAgentData")]
+        public async Task<JsonResult> GetAgentDataAsync(string chatInfoId, string agentId, string token, [FromServices] IConfiguration purecloudconfiguration)
         {
-            if (dataagent.Count <= 0)
+            try
             {
-                try
+                webChatApi = new WebChatApi();
+                dataagent.Clear();
+                pcconfiguration = new Purecloudconfiguration() { integrations = new integrations() };
+                _purecloudconfiguration = purecloudconfiguration;
+                _purecloudconfiguration.GetSection("integrations").Bind(pcconfiguration.integrations);
+
+                webChatApi.Configuration.DefaultHeader.Clear();
+                webChatApi.Configuration.AddDefaultHeader("Content-Type", pcconfiguration.integrations.others.content_type);
+                webChatApi.Configuration.AddDefaultHeader("Authorization", "bearer " + token);
+
+                PureCloudPlatform.Client.V2.Model.WebChatMemberInfo webChatMemberInfo = await webChatApi.GetWebchatGuestConversationMemberAsync(chatInfoId, agentId);
+                if (webChatMemberInfo.Role == WebChatMemberInfo.RoleEnum.Agent)
                 {
-                    HttpClient client = new HttpClient();
-
-                    client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("bearer", token);
-                    client.BaseAddress = new Uri(api + host);
-                    client.DefaultRequestHeaders
-                        .Accept
-                        .Add(new MediaTypeWithQualityHeaderValue(content_type));
-                    HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Get, "api/v2/webchat/guest/conversations/" + chatInfoId + "/members?excludeDisconnectedMembers=true");
-                    HttpResponseMessage result = client.SendAsync(request).Result;
-                    result.EnsureSuccessStatusCode();
-                    HttpContent _content = result.Content;
-                    string _jsonContent = _content.ReadAsStringAsync().Result;
-                    JObject tabledata = JObject.Parse(_jsonContent);
-                    JArray participants = (JArray)tabledata["entities"];
-
-                    foreach (JObject item in participants)
-                    {
-#if DEBUG
-                        Console.WriteLine(item.GetValue("role").ToString());
-#endif
-                        if (item.GetValue("role").ToString() == "AGENT")
-                        {
-#if DEBUG
-                            Console.WriteLine("displayName: " + item.GetValue("displayName").ToString());
-                            Console.WriteLine("avatarImageUrl: " + item.GetValue("avatarImageUrl").ToString());
-                            Console.WriteLine("id: " + item.GetValue("id").ToString());
-#endif
-                            //ViewBag.Agentname = item.GetValue("displayName").ToString();
-                            //ViewBag.AgentImageUrl = item.GetValue("avatarImageUrl").ToString();
-                            dataagent.Add(item.GetValue("displayName").ToString());
-                            dataagent.Add(item.GetValue("avatarImageUrl").ToString());
-                            dataagent.Add(item.GetValue("id").ToString());
-                        }
-                    }
-
-#if DEBUG
-                    Console.WriteLine("OKA: " + dataagent[1]);
-#endif
-                    var _json = JsonConvert.SerializeObject(dataagent);
-                    return Json(_json);
+                    dataagent.Add(webChatMemberInfo.DisplayName);
+                    dataagent.Add(webChatMemberInfo.AvatarImageUrl);
+                    dataagent.Add(webChatMemberInfo.Id);
                 }
-                catch (Exception ex)
-                {
-                    dataagent.Add("5Dimes");
-                    dataagent.Add("../content/clientimage.png");
-                    dataagent.Add("");
-#if DEBUG
-                    Console.WriteLine("ERROR: " + dataagent[1]);
-#endif
-                    var _json = JsonConvert.SerializeObject(dataagent);
-                    return Json(_json);
-                }
+                var _json = JsonConvert.SerializeObject(dataagent);
+                return Json(_json);
             }
-            else
+            catch (ApiException ex)
             {
                 var _json = JsonConvert.SerializeObject(dataagent);
                 return Json(_json);
             }
-
         }
 
+        //TODO: Get the current status of the call
+        [HttpPost]
+        [Route("Chat/GetConversationData")]
+        public async Task<JsonResult> GetConversationDataAsync(string chatInfoId, string token, [FromServices] IConfiguration purecloudconfiguration)
+        {
+            try
+            {
+                pcconfiguration = new Purecloudconfiguration() { integrations = new integrations() };
+                _purecloudconfiguration = purecloudconfiguration;
+                _purecloudconfiguration.GetSection("integrations").Bind(pcconfiguration.integrations);
+
+                PureCloudPlatform.Client.V2.Api.AnalyticsApi analyticsApi = new AnalyticsApi();
+                analyticsApi.Configuration.DefaultHeader.Clear();
+                analyticsApi.Configuration.AddDefaultHeader("Content-Type", pcconfiguration.integrations.others.content_type);
+                analyticsApi.Configuration.AddDefaultHeader("Authorization", "bearer " + token);
+
+                PureCloudPlatform.Client.V2.Model.AnalyticsConversationWithoutAttributes analyticsConversation = new AnalyticsConversationWithoutAttributes();
+                analyticsConversation = await analyticsApi.GetAnalyticsConversationDetailsAsync(chatInfoId);
+
+
+
+                string result = analyticsConversation.ToJson();
+                JObject _result = JObject.Parse(result);
+                var _json = JsonConvert.SerializeObject(_result);
+                return Json(_json);
+            }
+            catch (ApiException ex)
+            {
+                return Json("");
+
+            }
+        }
+
+
+
+        // Section to CRUD data to the table.
         // OK
         private string InsertChatSession(string id, string chatInfoId, string MemberId, string token, string content_type, string api, string host, string jwt)
         {
@@ -377,19 +385,7 @@ namespace LiveChat.Controllers
             }
         }
 
-        public static string GetLocalIPAddress()
-        {
-            var host = Dns.GetHostEntry(Dns.GetHostName());
-            foreach (var ip in host.AddressList)
-            {
-                if (ip.AddressFamily == AddressFamily.InterNetwork)
-                {
-                    return ip.ToString();
-                }
-            }
-            throw new Exception("No network adapters with an IPv4 address in the system!");
-        }
-
+        //OK
         public string GetUserIP()
         {
             string ipList;

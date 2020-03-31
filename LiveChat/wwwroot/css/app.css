@@ -11,7 +11,7 @@ html {
 }
 
 #page-wrapper {
-    width: 550px;
+    width: 500px;
     background: #FFF;
     padding: 1em;
     margin: 1em auto;
@@ -47,7 +47,7 @@ ul {
 
     border: 2px solid #ccc;
     overflow: scroll;
-    height:450px;
+    height:400px;
 }
 
     ul li {

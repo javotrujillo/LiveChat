@@ -30,7 +30,7 @@
 
 
         window.onload = function () {
-            @* // Get references to elements on the page. *@ 
+            @* // Get references to elements on the page. *@
             var form = document.getElementById('message-form');
             var messageField = document.getElementById('message');
             var messagesList = document.getElementById('messages');
@@ -40,7 +40,7 @@
 
             var btnsend = document.getElementById("sendmessage");
 
-            @* // Create a new WebSocket.  *@ 
+            @* // Create a new WebSocket.  *@
             var socket = new WebSocket(streamUri);
 
             @* // Handle any errors that occur. *@
@@ -60,31 +60,36 @@
                 var message = event.data;
                 var obj = JSON.parse(message);
 
-                if (obj.eventBody.bodyType == "member-join") {
-                    GetAgentData();
-                }
-
-                if (obj.eventBody.sender.id != clientid) {
-                    if (obj.eventBody.bodyType == "standard") {
+                if (obj.topicName.includes('messages')) {
+                    if (obj.eventBody.bodyType == 'member-join') {
+                        console.log('Someone ' + obj.eventBody.sender.id + ' join the conversation');
+                        GetAgentData(obj.eventBody.sender.id);
+                    } else if (obj.eventBody.bodyType == 'member-leave' && obj.eventBody.sender.id == agentid) {
+                        console.log('Someone leave the conversation');
+                        messagesList.innerHTML += '<li class="received" tabindex="-1">' + agentname + ' left the conversation.</li>';
+                    } else if (obj.eventBody.bodyType == 'standard' && obj.eventBody.sender.id != memberid) {
+                        console.log('Someone write "' + obj.eventBody.body + '" in the conversation');
                         var today = new Date();
                         messagesList.innerHTML += '<li class="received" tabindex="-1"><img src="' + agentimageUrl + '"><span>' + agentname + ':</span>' + obj.eventBody.body
                             + '<p>' + today.getHours() + ":" + today.getMinutes() + ":" + today.getSeconds() + '</p>'
                             + '</li>';
                     } else if (obj.eventBody.bodyType == "notice") {
+                        console.log('Notice this ' + obj.eventBody.body);
                         messagesList.innerHTML += '<li class="received" tabindex="-1">' + obj.eventBody.body + '</li>';
                     } else if (obj.metadata.type == "typing-indicator") {
-                        $('#typerDisplay').text( 'Agent is typing...');
-                        $('.chat__typing').fadeIn(100, function() {
+                        $('#typerDisplay').text('Agent is typing...');
+                        $('.chat__typing').fadeIn(100, function () {
                             $('.chat__type__body').addClass('typing_display__open');
-                        }).delay(1000).fadeOut(300, function(){
+                        }).delay(1000).fadeOut(300, function () {
                             $('.chat__type__body').removeClass('typing_display__open');
                         });
                     }
-                }
-
-                if (obj.eventBody.bodyType == "member-leave" && obj.eventBody.sender.id == agentid) {
-                    messagesList.innerHTML += '<li class="received" tabindex="-1">' + agentname + ' left conversation. Conversation Ended</li>';
-                    socket.close();
+                } else if (obj.topicName.includes('members')) {
+                    if (obj.eventBody.member.state == 'DISCONNECTED') {
+                        console.log(message);
+                    }
+                } else {
+                    
                 }
 
                 @* // Go To the last Child *@
@@ -96,36 +101,30 @@
             socket.onclose = function(event) {
                 socketStatus.innerHTML = 'Disconnected from ' + queuename + '.';
                 socketStatus.className = 'closed';
-                //document.getElementById("message").disabled = true;
+
                 messageField.disabled = true;
                 btnsend.disabled = true;
                 UpdateChatSession();
             };
 
-            @* // Send a message when the form is submitted. *@ 
+            @* // Send a message when the form is submitted. *@
             form.onsubmit = function(e) {
                 e.preventDefault();
 
                 @* // Retrieve the message from the textarea. *@
                 var message = messageField.value;
 
-                @* // Send the message through the WebSocket *@ 
+                @* // Send the message through the WebSocket *@
                 socket.send(message);
-                SendMessage();
+                SendMessage(message);
 
-                @* // Add the message to the messages list. *@
-                var today = new Date();
-                messagesList.innerHTML += '<li class="sent" tabindex="-1"><img src="../content/clientimage.png"></i><span>' + firstname + " " + lastname + ':</span>' + message
-                    + '<p>' + today.getHours() + ":" + today.getMinutes() + ":" + today.getSeconds() + '</p>'
-                    + '</li>';
-                $('#messages li:visible:last').focus();
-
-                @* // Clear out the message field.  *@
-                messageField.value = "";
+                @* // Clear out the message field.
+                messageField.value = ""; *@
+                messageField.value = '';
                 return false;
             };
 
-            @* // Close the WebSocket connection when the close button is clicked. *@ 
+            @* // Close the WebSocket connection when the close button is clicked. *@
             closeBtn.onclick = function(e) {
                 e.preventDefault();
                 @* // Close the WebSocket. *@
@@ -135,35 +134,65 @@
             };
         };
 
-        // OK
-        function SendMessage() {
-            var messagetosend = $('#message').val();
+        @* // OKA *@
+        function SendMessage(messagetosend) {
             $.ajax({
                 url: '/Chat/SendMessage',
-                type: 'get',
-                data: { messagetosend: messagetosend, chatInfoId: chatInfoId, MemberId: memberid, token: jwt, content_type : content_type, api : api, host : host },
-                datatype: 'json'
-            }).done(function () {
-
+                type: 'post',
+                data: { messagetosend: messagetosend, chatInfoId: chatInfoId, MemberId: memberid, token: jwt },
+                datatype: 'json',
+                success: function (response) {
+                    var obj = JSON.parse(response);
+                    var messagesList = document.getElementById('messages');
+                    var today = new Date();
+                    messagesList.innerHTML += '<li class="sent" tabindex="-1"><img src="../content/clientimage.png"></i><span>' + firstname + " " + lastname + ':</span>' + obj.body
+                        + '<p>' + today.getHours() + ":" + today.getMinutes() + ":" + today.getSeconds() + '</p>'
+                        + '</li>';
+                    $('#messages li:visible:last').focus();
+                }
             })
         }
 
-        // OK
-        function GetAgentData() {
+        @* // OKA *@
+        function GetAgentData(messageagentId) {
             $.ajax({
                 url: '/Chat/GetAgentData',
-                type: 'get',
-                data: { chatInfoId: chatInfoId, token: jwt, content_type : content_type, api : api, host : host },
-                datatype: 'json'
-            }).done(function (response) {
-                var dataagent = JSON.parse(response)
-                agentname = dataagent[0]
-                agentimageUrl = dataagent[1]
-                agentid = dataagent[2]
+                type: 'post',
+                data: { chatInfoId: chatInfoId, agentId: messageagentId, token: jwt },
+                datatype: 'json',
+                success: function (response) {
+                    var obj = JSON.parse(response);
+                    console.log('GetAgentData' + response);
+                    if (obj.length > 0) {
+                        agentname = obj[0]
+                        agentimageUrl = obj[1]
+                        agentid = obj[2]
+                        var messagesList = document.getElementById('messages');
+                        messagesList.innerHTML += '<li class="received" tabindex="-1">' + agentname + ' join the conversation.</li>';
+                    }
+                }
             })
         }
 
-        // OK
+        function GetConversationData() {
+            $.ajax({
+                url: '/Chat/GetAgentData',
+                type: 'post',
+                data: { chatInfoId: chatInfoId, agentId: messageagentId, token: jwt },
+                datatype: 'json',
+                success: function (response) {
+                    var obj = JSON.parse(response);
+                    console.log('GetAgentData' + response);
+                    if (obj[0] != "") {
+                        agentname = obj[0]
+                        agentimageUrl = obj[1]
+                        agentid = obj[2]
+                    }
+                }
+            })
+        }
+
+        
         function EndSession() {
             $.ajax({
                 url: '/Chat/EndSession',
