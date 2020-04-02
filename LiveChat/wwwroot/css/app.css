@@ -155,27 +155,27 @@ chat__type__body {
     margin-bottom: 0px;
 }
 
-.typing_display__open {
-    bottom: 30px;
-}
+    .typing_display__open {
+        bottom: 30px;
+    }
 
-.chat__typing {
-    position: absolute;
-    display: none;
-    height: 30px;
-    bottom: 0px;
-    left: 0px;
-    right: 0px;
-    margin-bottom: 0px;
-    background-color: #f2f2f2;
-    padding: 5px;
-}
+    .chat__typing {
+        position: absolute;
+        display: none;
+        height: 30px;
+        bottom: 0px;
+        left: 0px;
+        right: 0px;
+        margin-bottom: 0px;
+        background-color: #f2f2f2;
+        padding: 5px;
+    }
 
-.chat__typing span {
-        font-style: italic;
-        font-size: 8px;
-        color: #999999;
-}
+    .chat__typing span {
+            font-style: italic;
+            font-size: 8px;
+            color: #999999;
+    }
 
 
 

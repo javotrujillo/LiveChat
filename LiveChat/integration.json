@@ -24,6 +24,54 @@
     "organization": {
       "id": "c16b57cb-91d2-44e3-ad81-12c95bdef02d",
       "region": "us_east_1"
+    },
+    "queue": {
+      "WebChat_Demo": {
+        "name": "Chat Demo",
+        "skills": [
+          "WebChat_Demo"
+        ]
+      },
+      "Affiliates Department": {
+        "name": "Affiliates - Chat",
+        "skills": [ ]
+      },
+      "Bonus Department": {
+        "name": "Bonus - Chat",
+        "skills": [ ]
+      },
+      "asino & Poker Support Department": {
+        "name": "Casino & Poker Support - Chat",
+        "skills": [ ]
+      },
+      "Credit Card Department": {
+        "name": "Credit Card Department",
+        "skills": [ ]
+      },
+      "Customer Service Department": {
+        "name": "Customer Service - Chat",
+        "skills": [ ]
+      },
+      "Deposit Department": {
+        "name": "Deposit - Chat",
+        "skills": [ ]
+      },
+      "New Accounts Department": {
+        "name": "New Accounts - Chat",
+        "skills": [ ]
+      },
+      "Payouts Department": {
+        "name": "Payouts - Chat",
+        "skills": [ ]
+      },
+      "Wagering Issues Department": {
+        "name": "Wagering Issues - Chat",
+        "skills": [ ]
+      },
+      "Login Issues": {
+        "name": "New Accounts - Chat",
+        "skills": [ ]
+      }
     }
   }
 }

@@ -6,7 +6,6 @@
 <link rel="stylesheet" href="@Url.Content("~/css/app.css")">
 
 @section scripts {
-
     <script type="text/javascript">
         var streamUri = '@ViewBag.chatinformation.EventStreamUri';
         var queuename = '@ViewBag.client.queuename';
@@ -27,8 +26,6 @@
         var agentimageUrl = '';
         var agentid = '';
 
-
-
         window.onload = function () {
             @* // Get references to elements on the page. *@
             var form = document.getElementById('message-form');
@@ -38,7 +35,7 @@
             var closeBtn = document.getElementById('close');
             var clientid = '@ViewBag.chatinformation.Member.Id';
 
-            var btnsend = document.getElementById("sendmessage");
+            var btnsend = document.getElementById('sendmessage');
 
             @* // Create a new WebSocket.  *@
             var socket = new WebSocket(streamUri);
@@ -50,7 +47,6 @@
 
             @* // Show a connected message when the WebSocket is opened. *@
             socket.onopen = function(event) {
-                @*socketStatus.innerHTML = 'Connected to: >' + event.currentTarget.URL + '<' + @ViewBag.client.queuename;*@
                 socketStatus.innerHTML = 'Connected to ' + queuename;
                 socketStatus.className = 'open';
             };
@@ -73,10 +69,10 @@
                         messagesList.innerHTML += '<li class="received" tabindex="-1"><img src="' + agentimageUrl + '"><span>' + agentname + ':</span>' + obj.eventBody.body
                             + '<p>' + today.getHours() + ":" + today.getMinutes() + ":" + today.getSeconds() + '</p>'
                             + '</li>';
-                    } else if (obj.eventBody.bodyType == "notice") {
+                    } else if (obj.eventBody.bodyType == 'notice') {
                         console.log('Notice this ' + obj.eventBody.body);
                         messagesList.innerHTML += '<li class="received" tabindex="-1">' + obj.eventBody.body + '</li>';
-                    } else if (obj.metadata.type == "typing-indicator") {
+                    } else if (obj.metadata.type == 'typing-indicator' && obj.eventBody.sender.id == agentid) {
                         $('#typerDisplay').text('Agent is typing...');
                         $('.chat__typing').fadeIn(100, function () {
                             $('.chat__type__body').addClass('typing_display__open');
@@ -89,7 +85,7 @@
                         console.log(message);
                     }
                 } else {
-                    
+
                 }
 
                 @* // Go To the last Child *@
@@ -114,13 +110,13 @@
                 @* // Retrieve the message from the textarea. *@
                 var message = messageField.value;
 
-                @* // Send the message through the WebSocket *@
-                socket.send(message);
+                @* // Send the message through the WebSocket
+                socket.send(message); *@
                 SendMessage(message);
 
                 @* // Clear out the message field.
+                document.getElementById('message').value = '';
                 messageField.value = ""; *@
-                messageField.value = '';
                 return false;
             };
 
@@ -143,6 +139,7 @@
                 datatype: 'json',
                 success: function (response) {
                     var obj = JSON.parse(response);
+                    document.getElementById('message').value = '';
                     var messagesList = document.getElementById('messages');
                     var today = new Date();
                     messagesList.innerHTML += '<li class="sent" tabindex="-1"><img src="../content/clientimage.png"></i><span>' + firstname + " " + lastname + ':</span>' + obj.body
@@ -174,6 +171,19 @@
             })
         }
 
+        function SendTyping() {
+            $.ajax({
+                url: '/Chat/SendTyping',
+                type: 'post',
+                data: { chatInfoId: chatInfoId, memberId: memberid, token: jwt },
+                datatype: 'json',
+                success: function (response) {
+                    var obj = JSON.parse(response);
+                    console.log('SendTyping ' + response);
+                }
+            })
+        }
+
         function GetConversationData() {
             $.ajax({
                 url: '/Chat/GetAgentData',
@@ -192,7 +202,7 @@
             })
         }
 
-        
+
         function EndSession() {
             $.ajax({
                 url: '/Chat/EndSession',
@@ -216,8 +226,10 @@
         function process(e) {
             var code = (e.keyCode ? e.keyCode : e.which);
             if (code == 13 && !code.shiftKey) {
-                //alert("Sending your Message : " + document.getElementById('message').value);
                 $('form').submit();
+            } else if (code == 32 ) {
+                SendTyping();
+                $('#message').focus();
             }
         }
 

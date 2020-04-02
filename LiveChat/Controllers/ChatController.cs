@@ -30,7 +30,7 @@ namespace LiveChat.Controllers
         private IConfiguration _purecloudconfiguration;
 
         public Client client { get; set; }
-        public PureCloudPlatform.Client.V2.Client.Configuration configuration { get; set; }
+        //public PureCloudPlatform.Client.V2.Client.Configuration configuration { get; set; }
         public ApiClient apiclient { get; set; }
         public WebChatApi webChatApi { get; set; }
         public Purecloudconfiguration pcconfiguration { get; set; }
@@ -47,66 +47,65 @@ namespace LiveChat.Controllers
         [Route("Chat/Index")]
         public async Task<IActionResult> IndexAsync([FromServices] IConfiguration purecloudconfiguration)
         {
-            var fullname = Request.Form["name"].ToString().Split(' ');
-            string skill;
-            client = new Client()
-            {
-                firstname = fullname[0],
-                lastname = (fullname.Length > 1) ? fullname[1] : "",
-                customerid = Request.Form["customerid"],
-                queuename = Request.Form["queuename"]
-            };
-
-            //WebChat objects
-            pcconfiguration = new Purecloudconfiguration() { integrations = new integrations() };
-            webChatApi = new WebChatApi();
-            apiclient = new ApiClient();
-            chatInfo = new CreateWebChatConversationResponse();
-
-            _purecloudconfiguration = purecloudconfiguration;
-            _purecloudconfiguration.GetSection("integrations").Bind(pcconfiguration.integrations);
-
-            configuration = new Configuration();
-
-            configuration.ApiClient.setBasePath(region);
-
-            accessTokenInfo = new AuthTokenInfo();
-            accessTokenInfo = configuration.ApiClient.PostToken(
-                pcconfiguration.integrations.credentials.client_id,
-                pcconfiguration.integrations.credentials.client_secret);
-            accessTokenInfo.AccessToken = accessTokenInfo.AccessToken;
-            accessTokenInfo.TokenType = accessTokenInfo.TokenType;
-
-            configuration.AccessToken = accessTokenInfo.AccessToken;
-
             try
             {
-                int indexchat = client.queuename.IndexOf("-");
-                skill = client.queuename.Substring(0, indexchat).Trim();
-                
-            }
-            catch (Exception)
-            {
-                skill = client.queuename.ToString();
-            }
+                var fullname = Request.Form["name"].ToString().Split(' ');
+                List<string> skills;
+                string queue = Request.Form["queuename"];
 
-            CreateWebChatConversationRequest chatbody = new CreateWebChatConversationRequest()
-            {
-                DeploymentId = pcconfiguration.integrations.deployment.id,
-                OrganizationId = pcconfiguration.integrations.organization.id,
-                RoutingTarget = new WebChatRoutingTarget()
-                {
-                    Language = pcconfiguration.integrations.others.language,
-                    TargetType = WebChatRoutingTarget.TargetTypeEnum.Queue,
-                    TargetAddress = client.queuename.ToString(),
-                    Skills = new List<string>() { skill },
-                    Priority = 5
+                pcconfiguration = new Purecloudconfiguration() { integrations = new integrations() };
+                webChatApi = new WebChatApi();
+                apiclient = new ApiClient();
+                chatInfo = new CreateWebChatConversationResponse();
 
-                },
-                MemberInfo = new GuestMemberInfo()
+                _purecloudconfiguration = purecloudconfiguration;
+                _purecloudconfiguration.GetSection("integrations").Bind(pcconfiguration.integrations);
+
+                string[] _skills = pcconfiguration.integrations.queue[queue].skills;
+                skills = new List<string>(_skills);
+
+                client = new Client()
                 {
-                    DisplayName = client.firstname + " " + client.lastname,
-                    CustomFields = new Dictionary<string, string>()
+                    firstname = fullname[0],
+                    lastname = (fullname.Length > 1) ? fullname[1] : "",
+                    customerid = Request.Form["customerid"],
+                    queuename = pcconfiguration.integrations.queue[queue].name
+                };
+
+                //configuration = new Configuration();
+
+                //configuration.ApiClient.setBasePath(region);
+
+                Configuration.Default.ApiClient.setBasePath(region);
+
+                accessTokenInfo = new AuthTokenInfo();
+                //accessTokenInfo = configuration.ApiClient.PostToken(
+                accessTokenInfo = Configuration.Default.ApiClient.PostToken(
+                    pcconfiguration.integrations.credentials.client_id,
+                    pcconfiguration.integrations.credentials.client_secret);
+                accessTokenInfo.AccessToken = accessTokenInfo.AccessToken;
+                accessTokenInfo.TokenType = accessTokenInfo.TokenType;
+
+                //configuration.AccessToken = accessTokenInfo.AccessToken;
+                Configuration.Default.ApiClient.Configuration.AccessToken = accessTokenInfo.AccessToken;
+
+                CreateWebChatConversationRequest chatbody = new CreateWebChatConversationRequest()
+                {
+                    DeploymentId = pcconfiguration.integrations.deployment.id,
+                    OrganizationId = pcconfiguration.integrations.organization.id,
+                    RoutingTarget = new WebChatRoutingTarget()
+                    {
+                        Language = pcconfiguration.integrations.others.language,
+                        TargetType = WebChatRoutingTarget.TargetTypeEnum.Queue,
+                        TargetAddress = queue,
+                        Skills = skills,
+                        Priority = 5
+
+                    },
+                    MemberInfo = new GuestMemberInfo()
+                    {
+                        DisplayName = client.firstname + " " + client.lastname,
+                        CustomFields = new Dictionary<string, string>()
                     {
                         { "phoneNumber", "" },
                         { "customField1Label", "Account"},
@@ -117,36 +116,38 @@ namespace LiveChat.Controllers
                         { "customField3", Request.Headers["User-Agent"].ToString()}
 
                     },
-                    AvatarImageUrl = ""
-                }
-            };
+                        AvatarImageUrl = ""
+                    }
+                };
 
-            chatInfo = await webChatApi.PostWebchatGuestConversationsAsync(chatbody);
-            chatInfo.Member.Role = WebChatMemberInfo.RoleEnum.Customer;
-            chatInfo.Member.State = WebChatMemberInfo.StateEnum.Connected;
+                chatInfo = await webChatApi.PostWebchatGuestConversationsAsync(chatbody);
+                //chatInfo.Member.Role = WebChatMemberInfo.RoleEnum.Customer;
+                //chatInfo.Member.State = WebChatMemberInfo.StateEnum.Connected;
 
-            ViewBag.chatinformation = chatInfo;
-            ViewBag.chatbody = chatbody;
-            ViewBag.client = client;
-            ViewBag.jwt = chatInfo.Jwt;
-            ViewBag.token = accessTokenInfo.AccessToken;
+                ViewBag.chatinformation = chatInfo;
+                ViewBag.chatbody = chatbody;
+                ViewBag.client = client;
+                ViewBag.jwt = chatInfo.Jwt;
+                ViewBag.token = accessTokenInfo.AccessToken;
 
-            //ViewBag.configuration = configuration;
-            //ViewBag.webChatApi = webChatApi;
+                ViewBag.host = pcconfiguration.integrations.environment.host;
+                ViewBag.api = pcconfiguration.integrations.environment.api;
+                ViewBag.content_type = pcconfiguration.integrations.others.content_type;
+                ViewBag.tableid = pcconfiguration.integrations.others.table;
 
-            ViewBag.host = pcconfiguration.integrations.environment.host;
-            ViewBag.api = pcconfiguration.integrations.environment.api;
-            ViewBag.content_type = pcconfiguration.integrations.others.content_type;
-            ViewBag.tableid = pcconfiguration.integrations.others.table;
+                string _lastrowindex = InsertChatSession(pcconfiguration.integrations.others.table, chatInfo.Id, chatInfo.Member.Id, accessTokenInfo.AccessToken,
+                    pcconfiguration.integrations.others.content_type, pcconfiguration.integrations.environment.api,
+                    pcconfiguration.integrations.environment.host, chatInfo.Jwt
+                    );
 
-            string _lastrowindex = InsertChatSession(pcconfiguration.integrations.others.table, chatInfo.Id, chatInfo.Member.Id, accessTokenInfo.AccessToken,
-                pcconfiguration.integrations.others.content_type, pcconfiguration.integrations.environment.api,
-                pcconfiguration.integrations.environment.host, chatInfo.Jwt
-                );
+                ViewBag.newIndex = _lastrowindex;
 
-            ViewBag.newIndex = _lastrowindex;
-
-            ViewBag.Agentname = "";
+                ViewBag.Agentname = "";
+            }
+            catch (ApiException ex)
+            {
+                Console.WriteLine(ex.InnerException + " | " + ex.Message);
+            }
 
             return View();
 
@@ -165,14 +166,13 @@ namespace LiveChat.Controllers
         {
             try
             {
-                webChatApi = new WebChatApi();
-
                 pcconfiguration = new Purecloudconfiguration() { integrations = new integrations() };
                 _purecloudconfiguration = purecloudconfiguration;
                 _purecloudconfiguration.GetSection("integrations").Bind(pcconfiguration.integrations);
 
+                webChatApi = new WebChatApi();
                 webChatApi.Configuration.DefaultHeader.Clear();
-                webChatApi.Configuration.AddDefaultHeader("Content-Type", pcconfiguration.integrations.others.content_type);
+                webChatApi.Configuration.AddDefaultHeader("Content-Type", "application/json");
                 webChatApi.Configuration.AddDefaultHeader("Authorization", "bearer " + token);
 
                 CreateWebChatMessageRequest messageRequest = new CreateWebChatMessageRequest()
@@ -207,14 +207,10 @@ namespace LiveChat.Controllers
         {
             try
             {
-                webChatApi = new WebChatApi();
                 dataagent.Clear();
-                pcconfiguration = new Purecloudconfiguration() { integrations = new integrations() };
-                _purecloudconfiguration = purecloudconfiguration;
-                _purecloudconfiguration.GetSection("integrations").Bind(pcconfiguration.integrations);
-
+                webChatApi = new WebChatApi();
                 webChatApi.Configuration.DefaultHeader.Clear();
-                webChatApi.Configuration.AddDefaultHeader("Content-Type", pcconfiguration.integrations.others.content_type);
+                webChatApi.Configuration.AddDefaultHeader("Content-Type", "application/json");
                 webChatApi.Configuration.AddDefaultHeader("Authorization", "bearer " + token);
 
                 PureCloudPlatform.Client.V2.Model.WebChatMemberInfo webChatMemberInfo = await webChatApi.GetWebchatGuestConversationMemberAsync(chatInfoId, agentId);
@@ -234,26 +230,50 @@ namespace LiveChat.Controllers
             }
         }
 
-        //TODO: Get the current status of the call
+        // OK
         [HttpPost]
-        [Route("Chat/GetConversationData")]
-        public async Task<JsonResult> GetConversationDataAsync(string chatInfoId, string token, [FromServices] IConfiguration purecloudconfiguration)
+        [Route("Chat/SendTyping")]
+        public async Task<JsonResult> SendTypingAsync(string chatInfoId, string memberId, string token, [FromServices] IConfiguration purecloudconfiguration)
         {
             try
             {
-                pcconfiguration = new Purecloudconfiguration() { integrations = new integrations() };
-                _purecloudconfiguration = purecloudconfiguration;
-                _purecloudconfiguration.GetSection("integrations").Bind(pcconfiguration.integrations);
+                webChatApi = new WebChatApi();
+                webChatApi.Configuration.DefaultHeader.Clear();
+                webChatApi.Configuration.AddDefaultHeader("Content-Type", "application/json");
+                webChatApi.Configuration.AddDefaultHeader("Authorization", "bearer " + token);
 
+                PureCloudPlatform.Client.V2.Model.WebChatTyping webChatTyping = await webChatApi.PostWebchatGuestConversationMemberTypingAsync(chatInfoId, memberId);
+                string result = webChatTyping.ToJson();
+                JObject _result = JObject.Parse(result);
+                var _json = JsonConvert.SerializeObject(_result);
+                return Json(_json);
+            }
+            catch (ApiException ex)
+            {
+                PureCloudPlatform.Client.V2.Model.WebChatTyping webChatTyping = new WebChatTyping();
+                string result = webChatTyping.ToJson();
+                JObject _result = JObject.Parse(result);
+                var _json = JsonConvert.SerializeObject(_result);
+                return Json(_json);
+            }
+        }
+
+
+
+        //TODO: Get the current status of the call
+        [HttpPost]
+        [Route("Chat/GetConversationData")]
+        public async Task<JsonResult> GetConversationDataAsync(string chatInfoId, string token)
+        {
+            try
+            {
                 PureCloudPlatform.Client.V2.Api.AnalyticsApi analyticsApi = new AnalyticsApi();
                 analyticsApi.Configuration.DefaultHeader.Clear();
-                analyticsApi.Configuration.AddDefaultHeader("Content-Type", pcconfiguration.integrations.others.content_type);
+                analyticsApi.Configuration.AddDefaultHeader("Content-Type", "application/json");
                 analyticsApi.Configuration.AddDefaultHeader("Authorization", "bearer " + token);
 
                 PureCloudPlatform.Client.V2.Model.AnalyticsConversationWithoutAttributes analyticsConversation = new AnalyticsConversationWithoutAttributes();
                 analyticsConversation = await analyticsApi.GetAnalyticsConversationDetailsAsync(chatInfoId);
-
-
 
                 string result = analyticsConversation.ToJson();
                 JObject _result = JObject.Parse(result);
@@ -275,26 +295,25 @@ namespace LiveChat.Controllers
         {
             try
             {
-                HttpClient client = new HttpClient();
-                var content = new Dictionary<string, string>() { };
+                PureCloudPlatform.Client.V2.Api.ArchitectApi architectApi = new ArchitectApi();
+                architectApi.Configuration.DefaultHeader.Clear();
+                architectApi.Configuration.AddDefaultHeader("Content-Type", "application/json");
+                architectApi.Configuration.AddDefaultHeader("Authorization", "bearer " + Configuration.Default.AccessToken);
 
-                client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("bearer", token);
-                client.BaseAddress = new Uri(api + host);
-                client.DefaultRequestHeaders
-                    .Accept
-                    .Add(new MediaTypeWithQualityHeaderValue(content_type));
-                HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Get, "/api/v2/flows/datatables/" + id + "/rows?pageSize=100");
-                HttpResponseMessage result = client.SendAsync(request).Result;
-                result.EnsureSuccessStatusCode();
-                HttpContent _content = result.Content;
-                string _jsonContent = _content.ReadAsStringAsync().Result;
-                JObject tabledata = JObject.Parse(_jsonContent);
-                JArray rows = (JArray)tabledata["entities"];
+                DataTableRowEntityListing dataTableRowEntityListing = new DataTableRowEntityListing();
+                dataTableRowEntityListing = architectApi.GetFlowsDatatableRows(id, 1, 100, true);
+
+                string result = dataTableRowEntityListing.ToJson();
+                JObject _result = JObject.Parse(result);
+                JArray rows = (JArray)_result["entities"];
                 string _lastrowindex = (string)rows.Last["key"];
                 long lastrowindex = Convert.ToInt64(_lastrowindex);
                 long newindex = lastrowindex + 1;
 
 
+                var _json = JsonConvert.SerializeObject(_result);
+
+                var content = new Dictionary<string, string>() { };
                 content = new Dictionary<string, string>()
                 {
                     { "KEY", newindex.ToString() },
@@ -305,21 +324,12 @@ namespace LiveChat.Controllers
                     { "time", DateTime.Now.ToString("HH:mm:ss") }
                 };
 
-                request = new HttpRequestMessage(HttpMethod.Post, "/api/v2/flows/datatables/" + id + "/rows");
-                var json = JsonConvert.SerializeObject(content);
-                request.Content = new StringContent(json, Encoding.UTF8, "application/json");
+                var test = architectApi.PostFlowsDatatableRowsAsync(id, content);
 
-                result = client.SendAsync(request).Result;
-                result.EnsureSuccessStatusCode();
-
-                _content = result.Content;
-                _jsonContent = _content.ReadAsStringAsync().Result;
                 return newindex.ToString();
             }
-            catch (Exception ex)
+            catch (ApiException ex)
             {
-                //Models.Client client = new Client() { Phone = phone.ToString(), Name = ex.InnerException.Message, Lastname = ex.Message };
-                //return client;
                 ex.Message.ToString();
                 return null;
             }
@@ -355,6 +365,7 @@ namespace LiveChat.Controllers
             }
         }
 
+        //TODO: Improve this 
         // OK
         public JsonResult EndSession(string chatInfoId, string MemberId, string jwt, string content_type, string api, string host)
         {
