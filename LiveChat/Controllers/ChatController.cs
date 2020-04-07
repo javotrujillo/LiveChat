@@ -97,7 +97,7 @@ namespace LiveChat.Controllers
                     {
                         Language = pcconfiguration.integrations.others.language,
                         TargetType = WebChatRoutingTarget.TargetTypeEnum.Queue,
-                        TargetAddress = queue,
+                        TargetAddress = client.queuename,
                         Skills = skills,
                         Priority = 5
 
@@ -121,8 +121,6 @@ namespace LiveChat.Controllers
                 };
 
                 chatInfo = await webChatApi.PostWebchatGuestConversationsAsync(chatbody);
-                //chatInfo.Member.Role = WebChatMemberInfo.RoleEnum.Customer;
-                //chatInfo.Member.State = WebChatMemberInfo.StateEnum.Connected;
 
                 ViewBag.chatinformation = chatInfo;
                 ViewBag.chatbody = chatbody;
@@ -143,13 +141,15 @@ namespace LiveChat.Controllers
                 ViewBag.newIndex = _lastrowindex;
 
                 ViewBag.Agentname = "";
+                return View();
             }
             catch (ApiException ex)
             {
-                Console.WriteLine(ex.InnerException + " | " + ex.Message);
+                Console.WriteLine("Error in Index " + ex.Message + " | " + ex.InnerException);
+                return RedirectToAction("Index", "home");
             }
 
-            return View();
+            
 
         }
 
@@ -191,8 +191,9 @@ namespace LiveChat.Controllers
                 PureCloudPlatform.Client.V2.Model.WebChatMessage webChatMessage = new WebChatMessage()
                 {
                     BodyType = WebChatMessage.BodyTypeEnum.Notice,
-                    Body = ex.Message
+                    Body = "There was an error sending the message " + messagetosend + "."
                 };
+                Console.WriteLine("Error in SendMessage " + ex.Message + " | " + ex.InnerException);
                 string result = webChatMessage.ToJson();
                 JObject _result = JObject.Parse(result);
                 var _json = JsonConvert.SerializeObject(_result);
@@ -225,6 +226,8 @@ namespace LiveChat.Controllers
             }
             catch (ApiException ex)
             {
+                Console.WriteLine("Error in GetAgentData " + ex.Message + " | " + ex.InnerException);
+                dataagent.Add("5Dimes");
                 var _json = JsonConvert.SerializeObject(dataagent);
                 return Json(_json);
             }
@@ -250,6 +253,7 @@ namespace LiveChat.Controllers
             }
             catch (ApiException ex)
             {
+                Console.WriteLine("Error in SendTyping " + ex.Message + " | " + ex.InnerException);
                 PureCloudPlatform.Client.V2.Model.WebChatTyping webChatTyping = new WebChatTyping();
                 string result = webChatTyping.ToJson();
                 JObject _result = JObject.Parse(result);
@@ -275,13 +279,26 @@ namespace LiveChat.Controllers
                 PureCloudPlatform.Client.V2.Model.AnalyticsConversationWithoutAttributes analyticsConversation = new AnalyticsConversationWithoutAttributes();
                 analyticsConversation = await analyticsApi.GetAnalyticsConversationDetailsAsync(chatInfoId);
 
-                string result = analyticsConversation.ToJson();
-                JObject _result = JObject.Parse(result);
-                var _json = JsonConvert.SerializeObject(_result);
-                return Json(_json);
+                if (analyticsConversation.ConversationEnd.HasValue)
+                {
+                    Console.WriteLine("END");
+                    return Json(analyticsConversation.ConversationEnd);
+                }
+                else
+                {
+                    Console.WriteLine("NO END");
+                    return Json("NO END");
+                }
+
+                //string result = analyticsConversation.ToJson();
+                //JObject _result = JObject.Parse(result);
+                //var _json = JsonConvert.SerializeObject(_result);
+                //return Json(_json);
+
             }
             catch (ApiException ex)
             {
+                Console.WriteLine("Error in GetConversationData " + ex.Message + " | " + ex.InnerException);
                 return Json("");
 
             }
@@ -330,11 +347,12 @@ namespace LiveChat.Controllers
             }
             catch (ApiException ex)
             {
-                ex.Message.ToString();
+                Console.WriteLine("Error in InsertChatSession " + ex.Message + " | " + ex.InnerException);
                 return null;
             }
         }
 
+        //TODO: Improve this
         // OK
         public JsonResult UpdateChatSession(string id, string rowindex, string token, string content_type, string api, string host)
         {
@@ -360,7 +378,7 @@ namespace LiveChat.Controllers
             {
                 //Models.Client client = new Client() { Phone = phone.ToString(), Name = ex.InnerException.Message, Lastname = ex.Message };
                 //return client;
-                ex.Message.ToString();
+                Console.WriteLine("Error in UpdateChatSession " + ex.Message + " | " + ex.InnerException);
                 return null;
             }
         }
@@ -391,7 +409,7 @@ namespace LiveChat.Controllers
             }
             catch (Exception ex)
             {
-                ex.Message.ToString();
+                Console.WriteLine("Error in EndSession " + ex.Message + " | " + ex.InnerException);
                 return null;
             }
         }

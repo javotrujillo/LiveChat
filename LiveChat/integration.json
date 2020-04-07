@@ -26,51 +26,53 @@
       "region": "us_east_1"
     },
     "queue": {
-      "WebChat_Demo": {
-        "name": "Chat Demo",
-        "skills": [
-          "WebChat_Demo"
-        ]
+      "AA Chat Demo": {
+        "name": "WebChat_Demo",
+        "skills": [ "WebChat_Demo" ]
       },
-      "Affiliates Department": {
+      "Affiliates": {
         "name": "Affiliates - Chat",
-        "skills": [ ]
+        "skills": [ "Affiliates" ]
       },
-      "Bonus Department": {
+      "Bonus": {
         "name": "Bonus - Chat",
-        "skills": [ ]
+        "skills": [ "Bonus" ]
       },
-      "asino & Poker Support Department": {
-        "name": "Casino & Poker Support - Chat",
-        "skills": [ ]
+      "Casino & Poker Support": {
+        "name": "Casino & Poker - Chat",
+        "skills": [ "Casino&PokerSupport" ]
       },
       "Credit Card Department": {
         "name": "Credit Card Department",
-        "skills": [ ]
+        "skills": []
       },
-      "Customer Service Department": {
+      "Customer Service": {
         "name": "Customer Service - Chat",
-        "skills": [ ]
+        "skills": [ "Customer Service" ]
       },
-      "Deposit Department": {
+      "Deposit": {
         "name": "Deposit - Chat",
-        "skills": [ ]
+        "skills": [ "Deposit" ]
       },
-      "New Accounts Department": {
+      "New Accounts": {
         "name": "New Accounts - Chat",
-        "skills": [ ]
+        "skills": [ "New Accounts" ]
       },
-      "Payouts Department": {
+      "Payouts": {
         "name": "Payouts - Chat",
-        "skills": [ ]
+        "skills": [ "Payouts" ]
       },
-      "Wagering Issues Department": {
+      "Wagering Issues": {
         "name": "Wagering Issues - Chat",
-        "skills": [ ]
+        "skills": [ "Wagering Issues" ]
       },
-      "Login Issues": {
+      "Login Issues Department": {
         "name": "New Accounts - Chat",
-        "skills": [ ]
+        "skills": []
+      },
+      "Fraud": {
+        "name": "Fraud - Chat",
+        "skills": [ "Fraud" ]
       }
     }
   }

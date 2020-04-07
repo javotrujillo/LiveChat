@@ -17,7 +17,6 @@ html {
     margin: 1em auto;
     border-top: 5px solid #69c773;
     box-shadow: 0 2px 10px rgba(0,0,0,0.8);
-
     max-height: 700px;
 }
 
@@ -44,10 +43,9 @@ ul {
     margin: 0;
     padding: 0;
     font-size: 0.95rem;
-
     border: 2px solid #ccc;
     overflow: scroll;
-    height:400px;
+    height: 400px;
 }
 
     ul li {
@@ -60,7 +58,6 @@ ul {
         }
 
         ul li span {
-            
             width: 90px;
             font-weight: bold;
             color: #999;
@@ -69,7 +66,7 @@ ul {
             letter-spacing: 1px;
         }
 
-        ul li  p {
+        ul li p {
             bottom: 0px;
             left: 0px;
             right: 0px;
@@ -86,6 +83,7 @@ ul {
     padding-right: .6em;
     width: 100%
 }
+
     .sent img {
         border-radius: 15px;
         width: 15px;
@@ -95,6 +93,7 @@ ul {
 .received {
     width: 100%;
 }
+
     .received img {
         border-radius: 15px;
         width: 15px;
@@ -114,10 +113,9 @@ textarea {
     box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.1);
     min-height: 100px;
     margin-bottom: 1rem;
-
-    height:50px;
-    min-height:40px;
-    max-height:60px;
+    height: 50px;
+    min-height: 40px;
+    max-height: 60px;
 }
 
 button {
@@ -155,28 +153,24 @@ chat__type__body {
     margin-bottom: 0px;
 }
 
-    .typing_display__open {
-        bottom: 30px;
-    }
+.typing_display__open {
+    bottom: 30px;
+}
 
-    .chat__typing {
-        position: absolute;
-        display: none;
-        height: 30px;
-        bottom: 0px;
-        left: 0px;
-        right: 0px;
-        margin-bottom: 0px;
-        background-color: #f2f2f2;
-        padding: 5px;
-    }
+.chat__typing {
+    position: absolute;
+    display: none;
+    height: 30px;
+    bottom: 0px;
+    left: 0px;
+    right: 0px;
+    margin-bottom: 0px;
+    background-color: #f2f2f2;
+    padding: 5px;
+}
 
     .chat__typing span {
-            font-style: italic;
-            font-size: 8px;
-            color: #999999;
+        font-style: italic;
+        font-size: 8px;
+        color: #999999;
     }
-
-
-
-

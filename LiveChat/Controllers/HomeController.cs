@@ -20,16 +20,29 @@ namespace LiveChat.Controllers
     public class HomeController : Controller
     {
         private readonly ILogger<HomeController> _logger;
+        private IConfiguration _purecloudconfiguration;
+        public Queues queues;
+        public Purecloudconfiguration pcconfiguration { get; set; }
 
         public HomeController(ILogger<HomeController> logger)
         {
             _logger = logger;
         }
 
-        public IActionResult Index()
+        public IActionResult Index([FromServices] IConfiguration purecloudconfiguration)
         {
+            pcconfiguration = new Purecloudconfiguration() { integrations = new integrations() };
+            _purecloudconfiguration = purecloudconfiguration;
+            _purecloudconfiguration.GetSection("integrations").Bind(pcconfiguration.integrations);
 
-            return View();
+            queues = new Queues() { data = new Dictionary<string, string>() };
+
+            foreach (var item in pcconfiguration.integrations.queue)
+            {
+                queues.data.Add(item.Key, item.Value.name);
+            }
+
+            return View(queues);
         }
 
         //[HttpPost]

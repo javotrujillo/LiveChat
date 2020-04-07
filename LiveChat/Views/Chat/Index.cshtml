@@ -55,42 +55,45 @@
             socket.onmessage = function (event) {
                 var message = event.data;
                 var obj = JSON.parse(message);
+                console.log(obj);
+
 
                 if (obj.topicName.includes('messages')) {
                     if (obj.eventBody.bodyType == 'member-join') {
-                        console.log('Someone ' + obj.eventBody.sender.id + ' join the conversation');
+                        console.log('Someone ' + obj.eventBody.sender.id + ' join the conversation ' + chatInfoId);
                         GetAgentData(obj.eventBody.sender.id);
                     } else if (obj.eventBody.bodyType == 'member-leave' && obj.eventBody.sender.id == agentid) {
-                        console.log('Someone leave the conversation');
+                        console.log('Someone leave the conversation ' + chatInfoId);
                         messagesList.innerHTML += '<li class="received" tabindex="-1">' + agentname + ' left the conversation.</li>';
                     } else if (obj.eventBody.bodyType == 'standard' && obj.eventBody.sender.id != memberid) {
-                        console.log('Someone write "' + obj.eventBody.body + '" in the conversation');
                         var today = new Date();
                         messagesList.innerHTML += '<li class="received" tabindex="-1"><img src="' + agentimageUrl + '"><span>' + agentname + ':</span>' + obj.eventBody.body
                             + '<p>' + today.getHours() + ":" + today.getMinutes() + ":" + today.getSeconds() + '</p>'
                             + '</li>';
                     } else if (obj.eventBody.bodyType == 'notice') {
-                        console.log('Notice this ' + obj.eventBody.body);
                         messagesList.innerHTML += '<li class="received" tabindex="-1">' + obj.eventBody.body + '</li>';
                     } else if (obj.metadata.type == 'typing-indicator' && obj.eventBody.sender.id == agentid) {
-                        $('#typerDisplay').text('Agent is typing...');
+                        @* $('#typerDisplay').text('Agent is typing...'); *@
                         $('.chat__typing').fadeIn(100, function () {
                             $('.chat__type__body').addClass('typing_display__open');
-                        }).delay(1000).fadeOut(300, function () {
+                        }).delay(250).fadeOut(200, function () {
                             $('.chat__type__body').removeClass('typing_display__open');
                         });
+                        
                     }
+                    @* // Go To the last Child *@
+                    $('#messages li:visible:last').focus();
                 } else if (obj.topicName.includes('members')) {
                     if (obj.eventBody.member.state == 'DISCONNECTED') {
-                        console.log(message);
+                        console.log('Someone ' + obj.eventBody.member.id + ' got a DISCONNECTED of conversation ' + chatInfoId);
+                        GetConversationData();
                     }
                 } else {
-
+                    
                 }
 
                 @* // Go To the last Child *@
-                $('#messages li:visible:last').focus();
-
+                $('#message').focus();
             };
 
             @* // Show a disconnected message when the WebSocket is closed.  *@
@@ -139,16 +142,19 @@
                 datatype: 'json',
                 success: function (response) {
                     var obj = JSON.parse(response);
-                    document.getElementById('message').value = '';
                     var messagesList = document.getElementById('messages');
                     var today = new Date();
                     messagesList.innerHTML += '<li class="sent" tabindex="-1"><img src="../content/clientimage.png"></i><span>' + firstname + " " + lastname + ':</span>' + obj.body
                         + '<p>' + today.getHours() + ":" + today.getMinutes() + ":" + today.getSeconds() + '</p>'
                         + '</li>';
                     $('#messages li:visible:last').focus();
+                    console.log('SendMessage ' + response);
+
+                    document.getElementById('message').value = '';
+                    $('#message').focus();
                 }
             })
-        }
+        } 
 
         @* // OKA *@
         function GetAgentData(messageagentId) {
@@ -171,6 +177,7 @@
             })
         }
 
+        @* //TODO: IMPROVE THIS *@
         function SendTyping() {
             $.ajax({
                 url: '/Chat/SendTyping',
@@ -178,26 +185,21 @@
                 data: { chatInfoId: chatInfoId, memberId: memberid, token: jwt },
                 datatype: 'json',
                 success: function (response) {
-                    var obj = JSON.parse(response);
                     console.log('SendTyping ' + response);
+                    $('#message').focus();
                 }
             })
         }
 
+        @* WORKING ON THIS *@
         function GetConversationData() {
             $.ajax({
-                url: '/Chat/GetAgentData',
+                url: '/Chat/GetConversationData',
                 type: 'post',
-                data: { chatInfoId: chatInfoId, agentId: messageagentId, token: jwt },
+                data: { chatInfoId: chatInfoId, token: token },
                 datatype: 'json',
                 success: function (response) {
-                    var obj = JSON.parse(response);
-                    console.log('GetAgentData' + response);
-                    if (obj[0] != "") {
-                        agentname = obj[0]
-                        agentimageUrl = obj[1]
-                        agentid = obj[2]
-                    }
+                    console.log('GetConversationData ' + response);
                 }
             })
         }
@@ -229,8 +231,8 @@
                 $('form').submit();
             } else if (code == 32 ) {
                 SendTyping();
-                $('#message').focus();
             }
+            
         }
 
     </script>
@@ -252,15 +254,15 @@
         </div>
     </div>
     <div class="row">
-        <form id="message-form" action="#" method="post" class="col-xl-12">
-            <textarea id="message" placeholder="Write your message here..." onkeypress="process(event, this)" required></textarea>
+        <form id="message-form" name="message-form" action="#" method="post" class="col-xl-12">
+            <textarea id="message" name="message" onkeypress="process(event, this)" required></textarea>
             <button type="submit" id="sendmessage">Send Message</button>
             <button type="button" id="close">Close Chat</button>
         </form>
     </div>
     <div class="row">
         <div class="chat__typing">
-            <span id="typerDisplay"></span>
+            <span id="typerDisplay">Agent is typing...</span>
         </div>
     </div>
 </div>
