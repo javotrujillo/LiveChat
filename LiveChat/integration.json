@@ -28,7 +28,7 @@
     "queue": {
       "AA Chat Demo": {
         "name": "WebChat_Demo",
-        "skills": [ "WebChat_Demo" ]
+        "skills": [ "WebChat_Demo","Customer" ]
       },
       "Affiliates": {
         "name": "Affiliates - Chat",
