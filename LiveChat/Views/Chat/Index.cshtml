@@ -26,6 +26,8 @@
         var agentimageUrl = '';
         var agentid = '';
 
+        var participants = 1;
+
         window.onload = function () {
             @* // Get references to elements on the page. *@
             var form = document.getElementById('message-form');
@@ -55,8 +57,6 @@
             socket.onmessage = function (event) {
                 var message = event.data;
                 var obj = JSON.parse(message);
-                console.log(obj);
-
 
                 if (obj.topicName.includes('messages')) {
                     if (obj.eventBody.bodyType == 'member-join') {
@@ -87,9 +87,13 @@
                     if (obj.eventBody.member.state == 'DISCONNECTED') {
                         console.log('Someone ' + obj.eventBody.member.id + ' got a DISCONNECTED of conversation ' + chatInfoId);
                         GetConversationData();
+
                     }
                 } else {
-                    
+                    console.log('Participants ' + participants.toString());
+                    if (participants < 1) {
+                        socket.close();
+                    }
                 }
 
                 @* // Go To the last Child *@
@@ -171,7 +175,7 @@
                         agentimageUrl = obj[1]
                         agentid = obj[2]
                         var messagesList = document.getElementById('messages');
-                        messagesList.innerHTML += '<li class="received" tabindex="-1">' + agentname + ' join the conversation.</li>';
+                        messagesList.innerHTML += '<li class="received" tabindex="-1">' + agentname + ' joined the conversation.</li>';
                     }
                 }
             })
@@ -196,10 +200,13 @@
             $.ajax({
                 url: '/Chat/GetConversationData',
                 type: 'post',
-                data: { chatInfoId: chatInfoId, token: token },
+                data: { chatInfoId: chatInfoId, token: jwt },
                 datatype: 'json',
                 success: function (response) {
-                    console.log('GetConversationData ' + response);
+                    var obj = JSON.parse(response);
+                    participants = obj.total;
+                    console.log('GetConversationData participants ' + participants);
+                    
                 }
             })
         }

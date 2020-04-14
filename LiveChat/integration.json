@@ -28,51 +28,63 @@
     "queue": {
       "AA Chat Demo": {
         "name": "WebChat_Demo",
-        "skills": [ "WebChat_Demo","Customer" ]
+        "skills": [ "WebChat_Demo", "Customer" ],
+        "index": 0
       },
       "Affiliates": {
         "name": "Affiliates - Chat",
-        "skills": [ "Affiliates" ]
+        "skills": [ "Affiliates" ],
+        "index": 10
       },
-      "Bonus": {
+      "Bonuses": {
         "name": "Bonus - Chat",
-        "skills": [ "Bonus" ]
+        "skills": [ "Bonus" ],
+        "index": 1
       },
       "Casino & Poker Support": {
         "name": "Casino & Poker - Chat",
-        "skills": [ "Casino&PokerSupport" ]
+        "skills": [ "Casino&PokerSupport" ],
+        "index": 2
       },
-      "Credit Card Department": {
+      "Credit Cards": {
         "name": "Credit Card Department",
-        "skills": []
+        "skills": [],
+        "index": 3
       },
       "Customer Service": {
         "name": "Customer Service - Chat",
-        "skills": [ "Customer Service" ]
+        "skills": [ "Customer Service" ],
+        "index": 4
       },
-      "Deposit": {
+      "Deposits": {
         "name": "Deposit - Chat",
-        "skills": [ "Deposit" ]
+        "skills": [ "Deposit" ],
+        "index": 5
       },
       "New Accounts": {
         "name": "New Accounts - Chat",
-        "skills": [ "New Accounts" ]
+        "skills": [ "New Accounts" ],
+        "index": 7
       },
       "Payouts": {
         "name": "Payouts - Chat",
-        "skills": [ "Payouts" ]
+        "skills": [ "Payouts" ],
+        "index": 6
       },
       "Wagering Issues": {
         "name": "Wagering Issues - Chat",
-        "skills": [ "Wagering Issues" ]
+        "skills": [ "Wagering Issues" ],
+        "index": 9
       },
-      "Login Issues Department": {
+      "Login Issues": {
         "name": "New Accounts - Chat",
-        "skills": []
+        "skills": [],
+        "index": 8
       },
       "Fraud": {
         "name": "Fraud - Chat",
-        "skills": [ "Fraud" ]
+        "skills": [ "Fraud" ],
+        "index": 11
       }
     }
   }

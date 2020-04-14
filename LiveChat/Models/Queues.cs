@@ -5,6 +5,6 @@ namespace LiveChat.Models
 {
     public class Queues
     {
-        public Dictionary<string,string> data { get; set; }
+        public Dictionary<int,string> data { get; set; }
     }
 }

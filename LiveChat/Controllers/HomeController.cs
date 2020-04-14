@@ -35,12 +35,17 @@ namespace LiveChat.Controllers
             _purecloudconfiguration = purecloudconfiguration;
             _purecloudconfiguration.GetSection("integrations").Bind(pcconfiguration.integrations);
 
-            queues = new Queues() { data = new Dictionary<string, string>() };
+            queues = new Queues() { data = new Dictionary<int, string>() };
 
-            foreach (var item in pcconfiguration.integrations.queue)
+            var listqueues = from pair in pcconfiguration.integrations.queue.Values
+                             orderby pair.index ascending
+                             select pair;
+
+            foreach (var item in listqueues)
             {
-                queues.data.Add(item.Key, item.Value.name);
+                queues.data.Add(item.index, pcconfiguration.integrations.queue.FirstOrDefault(x => x.Value.index == item.index).Key);
             }
+
 
             return View(queues);
         }

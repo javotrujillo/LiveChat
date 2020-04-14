@@ -162,14 +162,10 @@ namespace LiveChat.Controllers
         // OK
         [HttpPost]
         [Route("Chat/SendMessage")]
-        public async Task<JsonResult> SendMessageAsync(string messagetosend, string chatInfoId, string memberId, string token, [FromServices] IConfiguration purecloudconfiguration)
+        public async Task<JsonResult> SendMessageAsync(string messagetosend, string chatInfoId, string memberId, string token)
         {
             try
             {
-                pcconfiguration = new Purecloudconfiguration() { integrations = new integrations() };
-                _purecloudconfiguration = purecloudconfiguration;
-                _purecloudconfiguration.GetSection("integrations").Bind(pcconfiguration.integrations);
-
                 webChatApi = new WebChatApi();
                 webChatApi.Configuration.DefaultHeader.Clear();
                 webChatApi.Configuration.AddDefaultHeader("Content-Type", "application/json");
@@ -204,7 +200,7 @@ namespace LiveChat.Controllers
         //OK
         [HttpPost]
         [Route("Chat/GetAgentData")]
-        public async Task<JsonResult> GetAgentDataAsync(string chatInfoId, string agentId, string token, [FromServices] IConfiguration purecloudconfiguration)
+        public async Task<JsonResult> GetAgentDataAsync(string chatInfoId, string agentId, string token)
         {
             try
             {
@@ -217,7 +213,14 @@ namespace LiveChat.Controllers
                 PureCloudPlatform.Client.V2.Model.WebChatMemberInfo webChatMemberInfo = await webChatApi.GetWebchatGuestConversationMemberAsync(chatInfoId, agentId);
                 if (webChatMemberInfo.Role == WebChatMemberInfo.RoleEnum.Agent)
                 {
-                    dataagent.Add(webChatMemberInfo.DisplayName);
+                    if (webChatMemberInfo.DisplayName != "")
+                    {
+                        dataagent.Add(webChatMemberInfo.DisplayName);
+                    }
+                    else
+                    {
+                        dataagent.Add("5Dimes");
+                    }
                     dataagent.Add(webChatMemberInfo.AvatarImageUrl);
                     dataagent.Add(webChatMemberInfo.Id);
                 }
@@ -236,7 +239,7 @@ namespace LiveChat.Controllers
         // OK
         [HttpPost]
         [Route("Chat/SendTyping")]
-        public async Task<JsonResult> SendTypingAsync(string chatInfoId, string memberId, string token, [FromServices] IConfiguration purecloudconfiguration)
+        public async Task<JsonResult> SendTypingAsync(string chatInfoId, string memberId, string token)
         {
             try
             {
@@ -271,36 +274,25 @@ namespace LiveChat.Controllers
         {
             try
             {
-                PureCloudPlatform.Client.V2.Api.AnalyticsApi analyticsApi = new AnalyticsApi();
-                analyticsApi.Configuration.DefaultHeader.Clear();
-                analyticsApi.Configuration.AddDefaultHeader("Content-Type", "application/json");
-                analyticsApi.Configuration.AddDefaultHeader("Authorization", "bearer " + token);
+                PureCloudPlatform.Client.V2.Api.WebChatApi webChatApi = new WebChatApi();
+                webChatApi.Configuration.DefaultHeader.Clear();
+                webChatApi.Configuration.AddDefaultHeader("Content-Type", "application/json");
+                webChatApi.Configuration.AddDefaultHeader("Authorization", "bearer " + token);
 
-                PureCloudPlatform.Client.V2.Model.AnalyticsConversationWithoutAttributes analyticsConversation = new AnalyticsConversationWithoutAttributes();
-                analyticsConversation = await analyticsApi.GetAnalyticsConversationDetailsAsync(chatInfoId);
+                WebChatMemberInfoEntityList participants = await webChatApi.GetWebchatGuestConversationMembersAsync(chatInfoId, 100, 1, true);
+                Console.WriteLine("Number of Participants " + participants.Total.Value.ToString());
 
-                if (analyticsConversation.ConversationEnd.HasValue)
-                {
-                    Console.WriteLine("END");
-                    return Json(analyticsConversation.ConversationEnd);
-                }
-                else
-                {
-                    Console.WriteLine("NO END");
-                    return Json("NO END");
-                }
-
-                //string result = analyticsConversation.ToJson();
-                //JObject _result = JObject.Parse(result);
-                //var _json = JsonConvert.SerializeObject(_result);
-                //return Json(_json);
-
+                string result = participants.ToJson();
+                JObject _result = JObject.Parse(result);
+                var _json = JsonConvert.SerializeObject(_result);
+                return Json(_json);
             }
             catch (ApiException ex)
             {
                 Console.WriteLine("Error in GetConversationData " + ex.Message + " | " + ex.InnerException);
-                return Json("");
-
+                JObject _result = JObject.Parse("END");
+                var _json = JsonConvert.SerializeObject(_result);
+                return Json(_json);
             }
         }
 
@@ -410,7 +402,7 @@ namespace LiveChat.Controllers
             catch (Exception ex)
             {
                 Console.WriteLine("Error in EndSession " + ex.Message + " | " + ex.InnerException);
-                return null;
+                return Json("ERROR");
             }
         }
 

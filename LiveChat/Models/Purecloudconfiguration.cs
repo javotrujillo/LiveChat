@@ -59,6 +59,7 @@ namespace LiveChat.Models
     {
         public string name { get; set; }
         public string[] skills { get; set; }
+        public int index { get; set; }
     }
     
 }

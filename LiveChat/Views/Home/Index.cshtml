@@ -37,7 +37,7 @@
             <select class="form-control" id="queuename" name="queuename">
                 @foreach (var item in Model.data)
                 {
-                    <option value="@item.Key">@Html.DisplayFor(modelItem => item.Key)</option>
+                    <option value="@item.Value">@Html.DisplayFor(modelItem => item.Value)</option>
                 }
             </select>
         </div>
@@ -45,8 +45,6 @@
         <div class="form-row">
             <div class="form-group-sm col-md-offset-2 col-md-10">
                 <input type="submit" class="btn-primary btn-xs btn" value="Chat with Us  &raquo;" />
-                @*<button type="submit" class="btn btn-primary btn-xs">Chat with Us  &raquo;</button>*@
-                <input name="__RequestVerificationToken" type="hidden" value="[Some token]" />
             </div>
         </div>
     </form>
