@@ -80,11 +80,6 @@
         "name": "New Accounts - Chat",
         "skills": [],
         "index": 8
-      },
-      "Fraud": {
-        "name": "Fraud - Chat",
-        "skills": [ "Fraud" ],
-        "index": 11
       }
     }
   }

@@ -1,26 +1,19 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
+using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Threading.Tasks;
 using LiveChat.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.HttpOverrides;
-using Microsoft.Extensions.Logging;
-using PureCloudPlatform.Client.V2.Client;
-using PureCloudPlatform.Client.V2.Api;
-using PureCloudPlatform.Client.V2.Model;
 using Microsoft.Extensions.Configuration;
-//using System.Net.WebSockets;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
-using PureCloudPlatform.Client.V2.Extensions;
 using Newtonsoft.Json.Linq;
-using System.Net.Http;
-using System.Net.Http.Headers;
-using System.Text;
-using System.Net;
-using System.Net.Sockets;
-using System.Web;
+using PureCloudPlatform.Client.V2.Api;
+using PureCloudPlatform.Client.V2.Client;
+using PureCloudPlatform.Client.V2.Extensions;
+using PureCloudPlatform.Client.V2.Model;
 
 namespace LiveChat.Controllers
 {
@@ -30,7 +23,6 @@ namespace LiveChat.Controllers
         private IConfiguration _purecloudconfiguration;
 
         public Client client { get; set; }
-        //public PureCloudPlatform.Client.V2.Client.Configuration configuration { get; set; }
         public ApiClient apiclient { get; set; }
         public WebChatApi webChatApi { get; set; }
         public Purecloudconfiguration pcconfiguration { get; set; }
@@ -45,6 +37,7 @@ namespace LiveChat.Controllers
 
         [HttpPost]
         [Route("Chat/Index")]
+        [IgnoreAntiforgeryToken(Order = 1001)]
         public async Task<IActionResult> IndexAsync([FromServices] IConfiguration purecloudconfiguration)
         {
             try
@@ -55,7 +48,7 @@ namespace LiveChat.Controllers
 
                 pcconfiguration = new Purecloudconfiguration() { integrations = new integrations() };
                 webChatApi = new WebChatApi();
-                apiclient = new ApiClient();
+                //apiclient = new ApiClient();
                 chatInfo = new CreateWebChatConversationResponse();
 
                 _purecloudconfiguration = purecloudconfiguration;
@@ -72,22 +65,47 @@ namespace LiveChat.Controllers
                     queuename = pcconfiguration.integrations.queue[queue].name
                 };
 
-                //configuration = new Configuration();
-
-                //configuration.ApiClient.setBasePath(region);
-
                 Configuration.Default.ApiClient.setBasePath(region);
 
-                accessTokenInfo = new AuthTokenInfo();
-                //accessTokenInfo = configuration.ApiClient.PostToken(
-                accessTokenInfo = Configuration.Default.ApiClient.PostToken(
-                    pcconfiguration.integrations.credentials.client_id,
-                    pcconfiguration.integrations.credentials.client_secret);
-                accessTokenInfo.AccessToken = accessTokenInfo.AccessToken;
-                accessTokenInfo.TokenType = accessTokenInfo.TokenType;
+                if (String.IsNullOrEmpty(Configuration.Default.ApiClient.Configuration.AccessToken))
+                {
+                    accessTokenInfo = new AuthTokenInfo();
+                    accessTokenInfo = Configuration.Default.ApiClient.PostToken(
+                        pcconfiguration.integrations.credentials.client_id,
+                        pcconfiguration.integrations.credentials.client_secret);
+                    accessTokenInfo.AccessToken = accessTokenInfo.AccessToken;
+                    accessTokenInfo.TokenType = accessTokenInfo.TokenType;
 
-                //configuration.AccessToken = accessTokenInfo.AccessToken;
-                Configuration.Default.ApiClient.Configuration.AccessToken = accessTokenInfo.AccessToken;
+                    Configuration.Default.ApiClient.Configuration.AccessToken = accessTokenInfo.AccessToken;
+                }
+                else
+                {
+                    try
+                    {
+                        PureCloudPlatform.Client.V2.Api.OAuthApi authApi = new OAuthApi();
+                        authApi.Configuration.DefaultHeader.Clear();
+                        authApi.Configuration.AddDefaultHeader("Content-Type", "application/json");
+                        authApi.Configuration.AddDefaultHeader("Authorization", "bearer " + Configuration.Default.ApiClient.Configuration.AccessToken);
+
+                        OAuthAuthorization oAuth = new OAuthAuthorization();
+                        oAuth = authApi.GetOauthAuthorization(pcconfiguration.integrations.credentials.client_id);
+
+                    }
+                    catch (ApiException ex)
+                    {
+                        if (ex.ErrorCode == 401)
+                        {
+                            accessTokenInfo = new AuthTokenInfo();
+                            accessTokenInfo = Configuration.Default.ApiClient.PostToken(
+                                pcconfiguration.integrations.credentials.client_id,
+                                pcconfiguration.integrations.credentials.client_secret);
+                            accessTokenInfo.AccessToken = accessTokenInfo.AccessToken;
+                            accessTokenInfo.TokenType = accessTokenInfo.TokenType;
+
+                            Configuration.Default.ApiClient.Configuration.AccessToken = accessTokenInfo.AccessToken;
+                        }
+                    }
+                }
 
                 CreateWebChatConversationRequest chatbody = new CreateWebChatConversationRequest()
                 {
@@ -126,30 +144,25 @@ namespace LiveChat.Controllers
                 ViewBag.chatbody = chatbody;
                 ViewBag.client = client;
                 ViewBag.jwt = chatInfo.Jwt;
-                ViewBag.token = accessTokenInfo.AccessToken;
+                ViewBag.token = Configuration.Default.ApiClient.Configuration.AccessToken;
+                ViewBag.displayqueue = queue;
 
-                ViewBag.host = pcconfiguration.integrations.environment.host;
-                ViewBag.api = pcconfiguration.integrations.environment.api;
-                ViewBag.content_type = pcconfiguration.integrations.others.content_type;
-                ViewBag.tableid = pcconfiguration.integrations.others.table;
-
-                string _lastrowindex = InsertChatSession(pcconfiguration.integrations.others.table, chatInfo.Id, chatInfo.Member.Id, accessTokenInfo.AccessToken,
-                    pcconfiguration.integrations.others.content_type, pcconfiguration.integrations.environment.api,
-                    pcconfiguration.integrations.environment.host, chatInfo.Jwt
-                    );
+                string _lastrowindex = InsertChatSession(pcconfiguration.integrations.others.table,
+                    chatInfo.Id,
+                    chatInfo.Member.Id,
+                    Configuration.Default.ApiClient.Configuration.AccessToken,
+                    chatInfo.Jwt);
 
                 ViewBag.newIndex = _lastrowindex;
-
                 ViewBag.Agentname = "";
+                ViewBag.tableid = pcconfiguration.integrations.others.table;
+
                 return View();
             }
             catch (ApiException ex)
             {
                 Console.WriteLine("Error in Index " + ex.Message + " | " + ex.InnerException);
-                return RedirectToAction("Index", "home");
             }
-
-            
 
         }
 
@@ -257,17 +270,13 @@ namespace LiveChat.Controllers
             catch (ApiException ex)
             {
                 Console.WriteLine("Error in SendTyping " + ex.Message + " | " + ex.InnerException);
-                PureCloudPlatform.Client.V2.Model.WebChatTyping webChatTyping = new WebChatTyping();
-                string result = webChatTyping.ToJson();
+                string result = @"{ ""SendTyping Result"":""FAIL"" }";
                 JObject _result = JObject.Parse(result);
                 var _json = JsonConvert.SerializeObject(_result);
                 return Json(_json);
             }
         }
 
-
-
-        //TODO: Get the current status of the call
         [HttpPost]
         [Route("Chat/GetConversationData")]
         public async Task<JsonResult> GetConversationDataAsync(string chatInfoId, string token)
@@ -290,17 +299,16 @@ namespace LiveChat.Controllers
             catch (ApiException ex)
             {
                 Console.WriteLine("Error in GetConversationData " + ex.Message + " | " + ex.InnerException);
-                JObject _result = JObject.Parse("END");
+                string result = @"{ ""GetConversationData Result"":""FAIL"" }";
+                JObject _result = JObject.Parse(result);
                 var _json = JsonConvert.SerializeObject(_result);
                 return Json(_json);
             }
         }
 
-
-
         // Section to CRUD data to the table.
         // OK
-        private string InsertChatSession(string id, string chatInfoId, string MemberId, string token, string content_type, string api, string host, string jwt)
+        private string InsertChatSession(string id, string chatInfoId, string MemberId, string token, string jwt)
         {
             try
             {
@@ -318,7 +326,6 @@ namespace LiveChat.Controllers
                 string _lastrowindex = (string)rows.Last["key"];
                 long lastrowindex = Convert.ToInt64(_lastrowindex);
                 long newindex = lastrowindex + 1;
-
 
                 var _json = JsonConvert.SerializeObject(_result);
 
@@ -344,65 +351,62 @@ namespace LiveChat.Controllers
             }
         }
 
-        //TODO: Improve this
         // OK
-        public JsonResult UpdateChatSession(string id, string rowindex, string token, string content_type, string api, string host)
+        [HttpPost]
+        [Route("Chat/UpdateChatSession")]
+        public async Task<JsonResult> UpdateChatSessionAsync(string id, string rowindex)
         {
             try
             {
-                HttpClient client = new HttpClient();
-                var content = new Dictionary<string, string>() { };
+                PureCloudPlatform.Client.V2.Api.ArchitectApi architectApi = new ArchitectApi();
+                architectApi.Configuration.DefaultHeader.Clear();
+                architectApi.Configuration.AddDefaultHeader("Content-Type", "application/json");
+                architectApi.Configuration.AddDefaultHeader("Authorization", "bearer " + Configuration.Default.AccessToken);
 
-                client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("bearer", token);
-                client.BaseAddress = new Uri(api + host);
-                client.DefaultRequestHeaders
-                    .Accept
-                    .Add(new MediaTypeWithQualityHeaderValue(content_type));
-                HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Delete, "/api/v2/flows/datatables/" + id + "/rows/" + rowindex);
-                HttpResponseMessage result = client.SendAsync(request).Result;
-                result.EnsureSuccessStatusCode();
-                HttpContent _content = result.Content;
-                string _jsonContent = _content.ReadAsStringAsync().Result;
-                var json = JsonConvert.SerializeObject(_jsonContent);
-                return null;
+                DataTableRowEntityListing dataTableRowEntityListing = new DataTableRowEntityListing();
+                await architectApi.DeleteFlowsDatatableRowAsync(id,rowindex);
+
+                string result = @"{ ""UpdateChatSession Result"":""OKA"" }";
+                JObject _result = JObject.Parse(result);
+                var _json = JsonConvert.SerializeObject(_result);
+                return Json(_json);
             }
-            catch (Exception ex)
+            catch (ApiException ex)
             {
-                //Models.Client client = new Client() { Phone = phone.ToString(), Name = ex.InnerException.Message, Lastname = ex.Message };
-                //return client;
                 Console.WriteLine("Error in UpdateChatSession " + ex.Message + " | " + ex.InnerException);
-                return null;
+                string result = @"{ ""UpdateChatSession Result"":""FAIL"" }";
+                JObject _result = JObject.Parse(result);
+                var _json = JsonConvert.SerializeObject(_result);
+                return Json(_json);
             }
         }
 
-        //TODO: Improve this 
         // OK
-        public JsonResult EndSession(string chatInfoId, string MemberId, string jwt, string content_type, string api, string host)
+        [HttpPost]
+        [Route("Chat/EndSession")]
+        public async Task<JsonResult> EndSessionAsync(string chatInfoId, string MemberId, string jwt)
         {
-            //var result = await client.DeleteAsync("/api/v2/webchat/guest/conversations/" + chatInfoId + "/members/" + MemberId);
-
             try
             {
-                HttpClient client = new HttpClient();
+                PureCloudPlatform.Client.V2.Api.WebChatApi webChatApi = new WebChatApi();
+                webChatApi.Configuration.DefaultHeader.Clear();
+                webChatApi.Configuration.AddDefaultHeader("Content-Type", "application/json");
+                webChatApi.Configuration.AddDefaultHeader("Authorization", "bearer " + jwt);
 
-                client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("bearer", jwt);
-                client.BaseAddress = new Uri(api + host);
-                client.DefaultRequestHeaders
-                    .Accept
-                    .Add(new MediaTypeWithQualityHeaderValue(content_type));
-                HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Delete, "/api/v2/webchat/guest/conversations/" + chatInfoId + "/members/" + MemberId);
-                HttpResponseMessage result = client.SendAsync(request).Result;
-                result.EnsureSuccessStatusCode();
-                HttpContent _content = result.Content;
-                string _jsonContent = _content.ReadAsStringAsync().Result;
+                await webChatApi.DeleteWebchatGuestConversationMemberAsync(chatInfoId, MemberId);
 
-                var _json = JsonConvert.SerializeObject(_jsonContent);
+                string result = @"{ ""EndSession Result"":""OKA"" }";
+                JObject _result = JObject.Parse(result);
+                var _json = JsonConvert.SerializeObject(_result);
                 return Json(_json);
             }
-            catch (Exception ex)
+            catch (ApiException ex)
             {
                 Console.WriteLine("Error in EndSession " + ex.Message + " | " + ex.InnerException);
-                return Json("ERROR");
+                string result = @"{ ""EndSession Result"":""FAIL"" }";
+                JObject _result = JObject.Parse(result);
+                var _json = JsonConvert.SerializeObject(_result);
+                return Json(_json);
             }
         }
 

@@ -17,7 +17,7 @@
     <h1 class="display-4">Welcome to Our Chat</h1>
 </div>
 <div class="container">
-    <form asp-controller="Chat" asp-action="Index" method="post">
+    <form asp-controller="Chat" asp-action="Index" asp-antiforgery="false" method="post">
         <div class="input-group">
             <div class="input-group-prepend">
                 <span class="input-group-text" id="basic-addon1">Name:</span>
@@ -44,7 +44,7 @@
         <br />
         <div class="form-row">
             <div class="form-group-sm col-md-offset-2 col-md-10">
-                <input type="submit" class="btn-primary btn-xs btn" value="Chat with Us  &raquo;" />
+                <input type="submit" class="btn-primary btn-xs btn" value="Chat with Us &raquo;" />
             </div>
         </div>
     </form>

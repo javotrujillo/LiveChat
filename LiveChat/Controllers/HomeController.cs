@@ -1,17 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
 using LiveChat.Models;
-
-using System.Xml;
-using Microsoft.Extensions.Configuration;
 using Microsoft.AspNetCore.Http;
-using System.Net.WebSockets;
-using System.Text;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
@@ -29,6 +23,7 @@ namespace LiveChat.Controllers
             _logger = logger;
         }
 
+        [IgnoreAntiforgeryToken(Order = 1001)]
         public IActionResult Index([FromServices] IConfiguration purecloudconfiguration)
         {
             pcconfiguration = new Purecloudconfiguration() { integrations = new integrations() };
@@ -46,15 +41,8 @@ namespace LiveChat.Controllers
                 queues.data.Add(item.index, pcconfiguration.integrations.queue.FirstOrDefault(x => x.Value.index == item.index).Key);
             }
 
-
             return View(queues);
         }
-
-        //[HttpPost]
-        //public ActionResult Chat()
-        //{
-        //    return RedirectToRoutePreserveMethod("Index", Request.Body);
-        //}
 
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
         public IActionResult Error()

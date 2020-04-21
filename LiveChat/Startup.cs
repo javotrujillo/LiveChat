@@ -31,27 +31,29 @@ namespace LiveChat
             services.Configure<Purecloudconfiguration>(Configuration.GetSection("integrations"));
 
             //Added to Get IP
-            services.Configure<ForwardedHeadersOptions>(options =>
-            {
-                options.ForwardedHeaders =
-                    ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
-            });
+            //services.Configure<ForwardedHeadersOptions>(options =>
+            //{
+            //    options.ForwardedHeaders =
+            //        ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+            //});
 
             //Added to Production
-            services.AddHsts(options =>
-            {
-                options.Preload = true;
-                options.IncludeSubDomains = true;
-                options.MaxAge = TimeSpan.FromDays(60);
-                options.ExcludedHosts.Add("example.com");
-                options.ExcludedHosts.Add("www.example.com");
-            });
+            //services.AddHsts(options =>
+            //{
+            //    options.Preload = true;
+            //    options.IncludeSubDomains = true;
+            //    options.MaxAge = TimeSpan.FromDays(60);
+            //    options.ExcludedHosts.Add("example.com");
+            //    options.ExcludedHosts.Add("www.example.com");
+            //});
 
-            services.AddHttpsRedirection(options =>
-            {
-                options.RedirectStatusCode = StatusCodes.Status307TemporaryRedirect;
-                options.HttpsPort = 5001;
-            });
+            //services.AddHttpsRedirection(options =>
+            //{
+            //    options.RedirectStatusCode = StatusCodes.Status307TemporaryRedirect;
+            //    options.HttpsPort = 5001;
+            //});
+
+
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -70,12 +72,12 @@ namespace LiveChat
             app.UseHttpsRedirection();
             app.UseStaticFiles();
 
-            var webSocketOptions = new WebSocketOptions()
-            {
-                KeepAliveInterval = TimeSpan.FromSeconds(120),
-                ReceiveBufferSize = 4 * 1024
-            };
-            app.UseWebSockets(webSocketOptions);
+            //var webSocketOptions = new WebSocketOptions()
+            //{
+            //    KeepAliveInterval = TimeSpan.FromSeconds(120),
+            //    ReceiveBufferSize = 4 * 1024
+            //};
+            //app.UseWebSockets(webSocketOptions);
 
             app.UseRouting();
 
@@ -89,15 +91,14 @@ namespace LiveChat
 
                 endpoints.MapControllerRoute(
                     name: "chat",
-                    //pattern: "{controller=Chat}/{action=Index}/{id?}");
                     pattern: "{controller=Chat}/{action?}");
             });
 
             //Added to get local IP
-            app.UseForwardedHeaders();
+            //app.UseForwardedHeaders();
 
             //Added to Production
-            app.UseCookiePolicy();
+            //app.UseCookiePolicy();
 
 
 

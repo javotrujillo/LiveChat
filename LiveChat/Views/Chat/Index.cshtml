@@ -11,15 +11,15 @@
         var queuename = '@ViewBag.client.queuename';
         var firstname = '@ViewBag.client.firstname';
         var lastname = '@ViewBag.client.lastname';
+        var displayqueue = '@ViewBag.displayqueue';
+
         var jwt = '@ViewBag.jwt';
         var token = '@ViewBag.token';
-        var memberid = '@ViewBag.chatinformation.Member.Id';
-        var host = '@ViewBag.host';
-        var api = '@ViewBag.api';
-        var chatInfoId = '@ViewBag.chatinformation.Id';
-        var content_type = '@ViewBag.content_type';
-        var tableid = '@ViewBag.tableid';
 
+        var memberid = '@ViewBag.chatinformation.Member.Id';
+        var chatInfoId = '@ViewBag.chatinformation.Id';
+
+        var tableid = '@ViewBag.tableid';
         var rowindex = '@ViewBag.newIndex';
 
         var agentname = '';
@@ -38,6 +38,7 @@
             var clientid = '@ViewBag.chatinformation.Member.Id';
 
             var btnsend = document.getElementById('sendmessage');
+            var btnclose = document.getElementById('close');
 
             @* // Create a new WebSocket.  *@
             var socket = new WebSocket(streamUri);
@@ -49,7 +50,7 @@
 
             @* // Show a connected message when the WebSocket is opened. *@
             socket.onopen = function(event) {
-                socketStatus.innerHTML = 'Connected to ' + queuename;
+                socketStatus.innerHTML = 'Connected to ' + displayqueue;
                 socketStatus.className = 'open';
             };
 
@@ -73,13 +74,12 @@
                     } else if (obj.eventBody.bodyType == 'notice') {
                         messagesList.innerHTML += '<li class="received" tabindex="-1">' + obj.eventBody.body + '</li>';
                     } else if (obj.metadata.type == 'typing-indicator' && obj.eventBody.sender.id == agentid) {
-                        @* $('#typerDisplay').text('Agent is typing...'); *@
                         $('.chat__typing').fadeIn(100, function () {
                             $('.chat__type__body').addClass('typing_display__open');
                         }).delay(250).fadeOut(200, function () {
                             $('.chat__type__body').removeClass('typing_display__open');
                         });
-                        
+
                     }
                     @* // Go To the last Child *@
                     $('#messages li:visible:last').focus();
@@ -95,7 +95,6 @@
                         socket.close();
                     }
                 }
-
                 @* // Go To the last Child *@
                 $('#message').focus();
             };
@@ -107,6 +106,7 @@
 
                 messageField.disabled = true;
                 btnsend.disabled = true;
+                btnclose.disabled = true;
                 UpdateChatSession();
             };
 
@@ -117,8 +117,17 @@
                 @* // Retrieve the message from the textarea. *@
                 var message = messageField.value;
 
-                @* // Send the message through the WebSocket
-                socket.send(message); *@
+                @* // Send the message through the WebSocket *@
+                socket.send(message);
+
+                var messagesList = document.getElementById('messages');
+                var today = new Date();
+                messagesList.innerHTML += '<li class="sent" tabindex="-1"><img src="../content/clientimage.png"></i><span>' + firstname + " " + lastname + ':</span>' + message
+                    + '<p>' + today.getHours() + ":" + today.getMinutes() + ":" + today.getSeconds() + '</p>'
+                    + '</li>';
+                $('#messages li:visible:last').focus();
+                document.getElementById('message').value = '';
+                $('#message').focus();
                 SendMessage(message);
 
                 @* // Clear out the message field.
@@ -143,22 +152,9 @@
                 url: '/Chat/SendMessage',
                 type: 'post',
                 data: { messagetosend: messagetosend, chatInfoId: chatInfoId, MemberId: memberid, token: jwt },
-                datatype: 'json',
-                success: function (response) {
-                    var obj = JSON.parse(response);
-                    var messagesList = document.getElementById('messages');
-                    var today = new Date();
-                    messagesList.innerHTML += '<li class="sent" tabindex="-1"><img src="../content/clientimage.png"></i><span>' + firstname + " " + lastname + ':</span>' + obj.body
-                        + '<p>' + today.getHours() + ":" + today.getMinutes() + ":" + today.getSeconds() + '</p>'
-                        + '</li>';
-                    $('#messages li:visible:last').focus();
-                    console.log('SendMessage ' + response);
-
-                    document.getElementById('message').value = '';
-                    $('#message').focus();
-                }
+                datatype: 'json'
             })
-        } 
+        }
 
         @* // OKA *@
         function GetAgentData(messageagentId) {
@@ -181,7 +177,7 @@
             })
         }
 
-        @* //TODO: IMPROVE THIS *@
+        @* OK *@
         function SendTyping() {
             $.ajax({
                 url: '/Chat/SendTyping',
@@ -195,7 +191,7 @@
             })
         }
 
-        @* WORKING ON THIS *@
+        @* Ok *@
         function GetConversationData() {
             $.ajax({
                 url: '/Chat/GetConversationData',
@@ -205,37 +201,45 @@
                 success: function (response) {
                     var obj = JSON.parse(response);
                     participants = obj.total;
-                    console.log('GetConversationData participants ' + participants);
-                    
+                    console.log('GetConversationData ' + response);
+
                 }
             })
         }
 
-
+        @* OK *@
         function EndSession() {
             $.ajax({
                 url: '/Chat/EndSession',
-                type: 'get',
-                data: { chatInfoId: chatInfoId, MemberId: memberid, jwt : jwt, content_type : content_type, api : api, host : host },
-                datatype: 'json'
-            }).done(function () {
-
+                type: 'post',
+                data: { chatInfoId: chatInfoId, MemberId: memberid, jwt: jwt},
+                datatype: 'json',
+                success: function (response) {
+                    console.log('EndSession ' + response);
+                }
             })
         }
 
+        @* OK *@
         function UpdateChatSession() {
             $.ajax({
                 url: '/Chat/UpdateChatSession',
-                type: 'get',
-                data: { id: tableid, rowindex: rowindex, token: token, content_type : content_type, api : api, host : host },
-                datatype: 'json'
-            }).done()
+                type: 'post',
+                data: { id: tableid, rowindex: rowindex },
+                datatype: 'json',
+                success: function (response) {
+                    console.log('UpdateChatSession ' + response);
+
+                }
+            })
         }
 
         function process(e) {
             var code = (e.keyCode ? e.keyCode : e.which);
             if (code == 13 && !code.shiftKey) {
                 $('form').submit();
+                document.getElementById('message').value = '';
+                $('#message').focus();  
             } else if (code == 32 ) {
                 SendTyping();
             }
@@ -261,7 +265,7 @@
         </div>
     </div>
     <div class="row">
-        <form id="message-form" name="message-form" action="#" method="post" class="col-xl-12">
+        <form id="message-form" name="message-form" action="#" method="post" class="col-xl-12" asp-antiforgery="false">
             <textarea id="message" name="message" onkeypress="process(event, this)" required></textarea>
             <button type="submit" id="sendmessage">Send Message</button>
             <button type="button" id="close">Close Chat</button>
