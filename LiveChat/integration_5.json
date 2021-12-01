@@ -1,11 +1,11 @@
-﻿{
+{
   "integrations": {
     "credentials": {
-      "client_id": "01be0beb-94c1-452e-b94e-cd4112aef6ed",
-      "client_secret": "oiLjsKdGjIHHCj4mjwITOG5HwkH-kuUmJZhTv0ZqHdI"
+      "client_id": "97adf30e-fc27-4019-8d1c-eb7f76f985b0",
+      "client_secret": "BwJWGB7-v8ctvQXhUMmBjAt3oH-bTjl5UFr0yTR7OrA"
     },
     "environment": {
-      "host": "mypurecloud.com",
+      "host": "mypurecloud.ie",
       "login": "https://login.",
       "api": "https://api."
     },
@@ -13,24 +13,19 @@
       "token": "/oauth/token"
     },
     "deployment": {
-      "id": "73b345fc-94ae-4d0a-a68a-a56d0615a895"
+      "id": "652059a4-08f4-4e0e-b3b1-4e6496b5d8b5"
     },
     "others": {
       "grant_type": "client_credentials",
       "content_type": "application/json",
       "language": "en",
-      "table": "a1f63f44-e0b4-4b91-abad-5314a4db3386"
+      "table": "22905c64-418b-44fd-a832-29f8fe9bfebf"
     },
     "organization": {
-      "id": "c16b57cb-91d2-44e3-ad81-12c95bdef02d",
-      "region": "us_east_1"
+      "id": "7c798e85-320c-4282-9f5e-a9ebb7452371",
+      "region": "eu_west_1"
     },
     "queue": {
-      "Chat Deemo": {
-        "name": "WebChat Demo - Chat",
-        "skills": [ "" ],
-        "index" :  0
-      },
       "Affiliates": {
         "name": "Affiliates - Chat",
         "skills": [ "Affiliates" ],
@@ -48,7 +43,7 @@
       },
       "Credit Cards": {
         "name": "Fraud - Chat",
-        "skills": [],
+        "skills": [ "Fraud" ],
         "index": 3
       },
       "Customer Service": {
@@ -73,12 +68,12 @@
       },
       "Wagering Issues": {
         "name": "Wagering Issues - Chat",
-        "skills": [ "Wagering Issues" ],
+        "skills": [ "Wagering-Issues" ],
         "index": 9
       },
       "Login Issues": {
         "name": "New Accounts - Chat",
-        "skills": [],
+        "skills": [ "New Accounts" ],
         "index": 8
       }
     }

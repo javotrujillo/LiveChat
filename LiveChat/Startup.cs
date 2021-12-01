@@ -92,6 +92,10 @@ namespace LiveChat
                 endpoints.MapControllerRoute(
                     name: "chat",
                     pattern: "{controller=Chat}/{action?}");
+
+                endpoints.MapControllerRoute(
+                    name: "api",
+                    pattern: "api/{controller=ChatActions}/{action?}");
             });
 
             //Added to get local IP

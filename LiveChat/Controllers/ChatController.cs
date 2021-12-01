@@ -23,7 +23,7 @@ namespace LiveChat.Controllers
         private IConfiguration _purecloudconfiguration;
 
         public Client client { get; set; }
-        public ApiClient apiclient { get; set; }
+        public ApiClient apiClient { get; set; }
         public WebChatApi webChatApi { get; set; }
         public Purecloudconfiguration pcconfiguration { get; set; }
         public CreateWebChatConversationResponse chatInfo { get; set; }
@@ -45,10 +45,9 @@ namespace LiveChat.Controllers
                 var fullname = Request.Form["name"].ToString().Split(' ');
                 List<string> skills;
                 string queue = Request.Form["queuename"];
-
                 pcconfiguration = new Purecloudconfiguration() { integrations = new integrations() };
-                webChatApi = new WebChatApi();
-                //apiclient = new ApiClient();
+
+                apiClient = new ApiClient();
                 chatInfo = new CreateWebChatConversationResponse();
 
                 _purecloudconfiguration = purecloudconfiguration;
@@ -65,47 +64,12 @@ namespace LiveChat.Controllers
                     queuename = pcconfiguration.integrations.queue[queue].name
                 };
 
-                Configuration.Default.ApiClient.setBasePath(region);
+                apiClient.setBasePath(region);
 
-                if (String.IsNullOrEmpty(Configuration.Default.ApiClient.Configuration.AccessToken))
-                {
-                    accessTokenInfo = new AuthTokenInfo();
-                    accessTokenInfo = Configuration.Default.ApiClient.PostToken(
-                        pcconfiguration.integrations.credentials.client_id,
-                        pcconfiguration.integrations.credentials.client_secret);
-                    accessTokenInfo.AccessToken = accessTokenInfo.AccessToken;
-                    accessTokenInfo.TokenType = accessTokenInfo.TokenType;
-
-                    Configuration.Default.ApiClient.Configuration.AccessToken = accessTokenInfo.AccessToken;
-                }
-                else
-                {
-                    try
-                    {
-                        PureCloudPlatform.Client.V2.Api.OAuthApi authApi = new OAuthApi();
-                        authApi.Configuration.DefaultHeader.Clear();
-                        authApi.Configuration.AddDefaultHeader("Content-Type", "application/json");
-                        authApi.Configuration.AddDefaultHeader("Authorization", "bearer " + Configuration.Default.ApiClient.Configuration.AccessToken);
-
-                        OAuthAuthorization oAuth = new OAuthAuthorization();
-                        oAuth = authApi.GetOauthAuthorization(pcconfiguration.integrations.credentials.client_id);
-
-                    }
-                    catch (ApiException ex)
-                    {
-                        if (ex.ErrorCode == 401)
-                        {
-                            accessTokenInfo = new AuthTokenInfo();
-                            accessTokenInfo = Configuration.Default.ApiClient.PostToken(
-                                pcconfiguration.integrations.credentials.client_id,
-                                pcconfiguration.integrations.credentials.client_secret);
-                            accessTokenInfo.AccessToken = accessTokenInfo.AccessToken;
-                            accessTokenInfo.TokenType = accessTokenInfo.TokenType;
-
-                            Configuration.Default.ApiClient.Configuration.AccessToken = accessTokenInfo.AccessToken;
-                        }
-                    }
-                }
+                accessTokenInfo = new AuthTokenInfo();
+                accessTokenInfo = apiClient.PostToken(pcconfiguration.integrations.credentials.client_id,pcconfiguration.integrations.credentials.client_secret);
+                accessTokenInfo.AccessToken = accessTokenInfo.AccessToken;
+                accessTokenInfo.TokenType = accessTokenInfo.TokenType;
 
                 CreateWebChatConversationRequest chatbody = new CreateWebChatConversationRequest()
                 {
@@ -116,7 +80,7 @@ namespace LiveChat.Controllers
                         Language = pcconfiguration.integrations.others.language,
                         TargetType = WebChatRoutingTarget.TargetTypeEnum.Queue,
                         TargetAddress = client.queuename,
-                        Skills = skills,
+                        //Skills = skills,
                         Priority = 5
 
                     },
@@ -125,7 +89,6 @@ namespace LiveChat.Controllers
                         DisplayName = client.firstname + " " + client.lastname,
                         CustomFields = new Dictionary<string, string>()
                     {
-                        { "phoneNumber", "" },
                         { "customField1Label", "Account"},
                         { "customField1", client.customerid.ToString()},
                         { "customField2Label", "IP Address"},
@@ -138,19 +101,20 @@ namespace LiveChat.Controllers
                     }
                 };
 
+                webChatApi = new WebChatApi();
                 chatInfo = await webChatApi.PostWebchatGuestConversationsAsync(chatbody);
 
                 ViewBag.chatinformation = chatInfo;
                 ViewBag.chatbody = chatbody;
                 ViewBag.client = client;
                 ViewBag.jwt = chatInfo.Jwt;
-                ViewBag.token = Configuration.Default.ApiClient.Configuration.AccessToken;
+                ViewBag.token = accessTokenInfo.AccessToken;
                 ViewBag.displayqueue = queue;
 
                 string _lastrowindex = InsertChatSession(pcconfiguration.integrations.others.table,
                     chatInfo.Id,
                     chatInfo.Member.Id,
-                    Configuration.Default.ApiClient.Configuration.AccessToken,
+                    accessTokenInfo.AccessToken,
                     chatInfo.Jwt);
 
                 ViewBag.newIndex = _lastrowindex;
@@ -162,6 +126,7 @@ namespace LiveChat.Controllers
             catch (ApiException ex)
             {
                 Console.WriteLine("Error in Index " + ex.Message + " | " + ex.InnerException);
+                return View();
             }
 
         }
